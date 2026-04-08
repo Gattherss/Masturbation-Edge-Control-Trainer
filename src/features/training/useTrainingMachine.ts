@@ -34,6 +34,7 @@ interface FinalizeHandle {
 export interface MachineResult {
   state: MachineState;
   elapsedMs: number;
+  currentPhaseElapsedMs: number;
   restCountdown: number | null;
   pendingFinalize: FinalizeHandle | null;
   start: () => void;
@@ -150,6 +151,8 @@ export function useTrainingMachine({ plan }: MachineOptions): MachineResult {
   const [restCountdown, setRestCountdown] = useState<number | null>(null);
   const [pendingFinalize, setPendingFinalize] = useState<FinalizeHandle | null>(null);
   const rafRef = useRef<number | null>(null);
+  const currentPhaseElapsedMs =
+    state.isRunning && !state.isPaused ? Math.max(0, elapsedMs - state.accumulatedMs) : 0;
 
   useEffect(() => {
     setState((prev) => ({
@@ -429,6 +432,7 @@ export function useTrainingMachine({ plan }: MachineOptions): MachineResult {
   return {
     state,
     elapsedMs,
+    currentPhaseElapsedMs,
     restCountdown,
     pendingFinalize,
     start,

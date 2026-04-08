@@ -1,14 +1,20 @@
-# 寸止边缘训练器 / Edge Control Trainer
+# 边缘控制训练 / Edge Control Trainer
 
-`寸止边缘训练器` 是一套围绕节律训练、长期成长追踪、奖励反馈与公开竞技秩序构建的前端产品。它把单次训练记录、长期算法评估、金属勋章体系、赛季天梯、移动端 PWA 壳层和 Supabase 云端同步边界组织成了一条完整链路，因此这个项目既可以作为本地训练工具来使用，也已经具备继续推进为一套公开产品的结构基础。
+这是一个自慰边缘寸止训练系统。
+每次自慰如果不做训练是一种浪费。你可以边自慰边记录时间与状态，切实提升自己的控射能力和持久度。这个系统的目标非常明确且原始：让你越来越延时，越来越猛。
 
-`Edge Control Trainer` is a frontend product built around rhythm training, long-horizon progress tracking, reward design, and a publishable competitive ladder. It connects session logging, deterministic scoring, metallic medals, seasonal ladder progression, a mobile-first PWA shell, and Supabase sync boundaries into one coherent system.
+This is an edging control training system.
+Masturbating without training is a waste. You can log your times and physical state as you masturbate to effectively build your ejaculatory control and endurance. The goal of this system is straightforward and primal: to make you last profoundly longer and become consistently stronger.
 
 ## 项目简介 / Overview
 
-这个项目试图回答的，不只是“今天练了多久”，而是更细也更难的问题：休息是否在缩短、持续刺激是否在变长、控制与稳定性是否在同步提高、这些变化在几个月的跨度上是否仍然成立，以及这些结果怎样被转译成勋章、段位和公开排行榜中的位置。
+训练系统的操作极其平实。开始训练后，你持续自慰至接近高潮的绝顶边缘（寸止），接着点击休息按钮进入休息阶段。在休息区间内等待冲动平复，随后再次点击继续按钮，重新自慰至边缘。在一次训练中反复数次这样的循环，就能有效训练身体的控射极限。
 
-This project is not only about counting time. It is designed to answer a harder set of questions: whether rest windows are shrinking, whether sustained stimulation is extending, whether control and stability are improving together, whether those changes still hold across months, and how those results can be translated into medals, tier movement, and public ladder placement.
+The operation is entirely straightforward. Once you start a session, you masturbate continuously until reaching the very edge of climax. You then click the rest button to enter a recovery phase. After letting the urge subside, you click resume and masturbate to the edge again. Repeating this cycle several times in one session effectively trains your body's ejaculatory limits.
+
+系统会将这些纯粹的生理数据全面记录并追踪。你承受高强度刺激的时间、你恢复平静的速度，将被数学模型接管。所有的训练增量最终都会被折算成分数，转化为证明实力的重金属勋章，并直接挂靠在真实的天梯段位序列中。
+
+The system records and tracks all these pure physiological data points. The duration you endure intense stimulation and your recovery speed are managed by mathematical models. All your genuine improvements are ultimately quantified into scores, translated into heavy metallic medals, and ranked on an absolute competitive ladder.
 
 ## 主要功能 / Core Features
 
