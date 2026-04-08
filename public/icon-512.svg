@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 192 192" fill="none">
+  <rect width="192" height="192" rx="48" fill="#0b1020"/>
+  <path d="M96 18L154 43L142 118L96 154L50 118L38 43L96 18Z" fill="url(#shield)" stroke="rgba(255,255,255,0.35)" stroke-width="6"/>
+  <path d="M70 108L91 82L84 82L104 48L98 76H109L87 120L92 98L70 108Z" fill="url(#bolt)"/>
+  <path d="M58 136C68 147 80 154 96 158C112 154 124 147 134 136" stroke="rgba(255,255,255,0.42)" stroke-width="6" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="shield" x1="40" y1="28" x2="152" y2="150" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC"/>
+      <stop offset="0.48" stop-color="#94A3B8"/>
+      <stop offset="1" stop-color="#334155"/>
+    </linearGradient>
+    <linearGradient id="bolt" x1="70" y1="48" x2="116" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDE68A"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+</svg>

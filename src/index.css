@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --bg-0: #05070d;
+  --bg-1: #0b1020;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --ring-soft: rgba(255, 255, 255, 0.1);
+}
+
+html {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top, rgba(245, 158, 11, 0.12), transparent 34%),
+    radial-gradient(circle at 82% 18%, rgba(59, 130, 246, 0.12), transparent 28%),
+    linear-gradient(180deg, var(--bg-1), var(--bg-0));
+}
+
+body {
+  @apply font-sans text-slate-100;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(245, 158, 11, 0.12), transparent 34%),
+    radial-gradient(circle at 82% 18%, rgba(59, 130, 246, 0.12), transparent 28%),
+    linear-gradient(180deg, var(--bg-1), var(--bg-0));
+  color: var(--text-main);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(148, 163, 184, 0.3);
+  color: white;
+}
+
+input,
+select,
+textarea,
+button {
+  accent-color: #e2e8f0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
