@@ -23,7 +23,10 @@ migrate();
 if ('serviceWorker' in navigator) {
   // @ts-ignore
   if (import.meta && import.meta.env && import.meta.env.PROD) {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker
+      .register('/sw.js', { updateViaCache: 'none' })
+      .then((registration) => registration.update())
+      .catch(() => {});
   } else {
     navigator.serviceWorker
       .getRegistrations()
