@@ -15,11 +15,15 @@ import { loadProfile, persistProfile } from '@/lib/profile';
 import { getSyncState, persistSyncState } from '@/lib/sync';
 import { getSupabaseEnv } from '@/lib/supabase';
 import {
+  applySupabaseRestoreErrorSyncState,
+  applySupabaseUserSyncState,
+  shouldOpenWelcomeGate
+} from '@/lib/authState';
+import {
   buildGuestWelcomePromptState,
   buildLaterWelcomePromptState,
   getWelcomePromptState,
-  persistWelcomePromptState,
-  shouldShowWelcomePrompt
+  persistWelcomePromptState
 } from '@/lib/welcomePrompt';
 import { MedalCard } from '@/components/MedalCard';
 import type { Badge, Baseline, LadderRating, LeaderboardEntry, PublicProfile, Session, Settings as AppSettings, SyncState } from '@/types/models';
@@ -118,6 +122,7 @@ export default function App() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [view, setView] = useState<ViewTab>('training');
+  const [welcomeGateManuallyOpen, setWelcomeGateManuallyOpen] = useState(false);
   const [remoteLeaderboard, setRemoteLeaderboard] = useState<LeaderboardEntry[] | null>(null);
   const [remoteLeaderboardStatus, setRemoteLeaderboardStatus] = useState<RemoteLeaderboardStatus>('idle');
   const [remoteLeaderboardError, setRemoteLeaderboardError] = useState<string | null>(null);
@@ -139,11 +144,14 @@ export default function App() {
   const ladderRating = useMemo(() => buildLadderRating(snapshot), [snapshot]);
   const welcomePromptOpen = useMemo(
     () =>
-      supabaseReady &&
-      authBootstrapComplete &&
-      !syncState.userId &&
-      shouldShowWelcomePrompt(welcomePromptState),
-    [authBootstrapComplete, supabaseReady, syncState.userId, welcomePromptState]
+      shouldOpenWelcomeGate({
+        supabaseReady,
+        authBootstrapComplete,
+        syncState,
+        welcomePromptState,
+        forcedOpen: welcomeGateManuallyOpen
+      }),
+    [authBootstrapComplete, supabaseReady, syncState, welcomeGateManuallyOpen, welcomePromptState]
   );
   const featuredMedal = useMemo(
     () => medals.find((medal) => medal.code === profile.featuredMedalCode) ?? getFeaturedBadge(medals),
@@ -226,6 +234,7 @@ export default function App() {
       return;
     }
 
+    setWelcomeGateManuallyOpen(false);
     handleWelcomePromptStateChange(null);
   }, [handleWelcomePromptStateChange, syncState.userId]);
 
@@ -251,14 +260,7 @@ export default function App() {
 
     const applyUser = (user: { id: string; email?: string | null } | null) => {
       if (!active) return;
-      setSyncState((prev) => ({
-        ...prev,
-        provider: user ? 'supabase' : 'local',
-        status: prev.status === 'syncing' ? 'syncing' : 'idle',
-        userId: user?.id,
-        email: user?.email ?? prev.email,
-        lastError: undefined
-      }));
+      setSyncState((prev) => applySupabaseUserSyncState(prev, user));
     };
 
     restoreSupabaseUser()
@@ -269,12 +271,7 @@ export default function App() {
       })
       .catch((error) => {
         if (!active) return;
-        setSyncState((prev) => ({
-          ...prev,
-          provider: 'local',
-          status: 'error',
-          lastError: describeSupabaseError(error)
-        }));
+        setSyncState((prev) => applySupabaseRestoreErrorSyncState(prev, describeSupabaseError(error)));
         setAuthBootstrapComplete(true);
       });
 
@@ -365,6 +362,7 @@ export default function App() {
 
   const snoozeWelcomePrompt = useCallback(
     (showToast: boolean) => {
+      setWelcomeGateManuallyOpen(false);
       handleWelcomePromptStateChange(buildLaterWelcomePromptState());
       if (showToast) {
         setToast('先不登录也可以，我们今天先不再提醒你。');
@@ -374,9 +372,28 @@ export default function App() {
   );
 
   const handleContinueAsGuest = useCallback(() => {
+    setWelcomeGateManuallyOpen(false);
     handleWelcomePromptStateChange(buildGuestWelcomePromptState());
     setToast('当前将以游客模式继续，记录会先保存在这台设备上。');
   }, [handleWelcomePromptStateChange]);
+
+  const handleOpenSyncAccess = useCallback(() => {
+    if (syncState.userId || !supabaseReady) {
+      setView('settings');
+      return;
+    }
+
+    setWelcomeGateManuallyOpen(true);
+  }, [supabaseReady, syncState.userId]);
+
+  const handleCloseWelcomeGate = useCallback(() => {
+    if (welcomeGateManuallyOpen) {
+      setWelcomeGateManuallyOpen(false);
+      return;
+    }
+
+    snoozeWelcomePrompt(false);
+  }, [welcomeGateManuallyOpen, snoozeWelcomePrompt]);
 
   const handleWelcomeMagicLink = useCallback(async () => {
     if (!syncState.email) {
@@ -696,6 +713,22 @@ export default function App() {
               <p className="text-[11px] uppercase tracking-[0.36em] text-sky-400 drop-shadow-md">寸止边缘训练器 / Edge Control Trainer</p>
               <h1 className="mt-3 text-5xl font-bold tracking-wide text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.15)] xl:text-6xl">Edge Control Trainer</h1>
               <p className="mt-3 text-lg text-slate-300 xl:text-xl">寸止边缘训练器</p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  className="rounded-full border border-sky-300/20 bg-sky-400/10 px-4 py-2 text-sm font-medium text-sky-100 transition hover:border-sky-200/40 hover:bg-sky-400/20"
+                  onClick={handleOpenSyncAccess}
+                >
+                  {syncState.userId ? 'Account' : 'Sign In'}
+                </button>
+                <p className="text-sm text-slate-400">
+                  {syncState.userId
+                    ? syncState.email ?? 'Supabase sync is active.'
+                    : supabaseReady
+                      ? 'Open the sign-in dialog any time to restore sync.'
+                      : 'Supabase is not configured yet, so this device is staying in local mode.'}
+                </p>
+              </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <SummaryChip label="赛季" value={currentSeason.name} />
@@ -834,7 +867,7 @@ export default function App() {
         email={syncState.email ?? ''}
         loading={syncState.status === 'syncing'}
         error={syncState.status === 'error' ? syncState.lastError : undefined}
-        onClose={() => snoozeWelcomePrompt(false)}
+        onClose={handleCloseWelcomeGate}
         onEmailChange={handleWelcomeEmailChange}
         onSendMagicLink={handleWelcomeMagicLink}
         onContinueAsGuest={handleContinueAsGuest}
