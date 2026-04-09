@@ -56,30 +56,30 @@ export default function SettingsPage({
   onSignOutSupabase
 }: SettingsPageProps) {
   const providerLabel = !supabaseReady
-    ? '纯本地模式'
+    ? '仅保存在当前设备'
     : hasSupabaseSession
-      ? 'Supabase 已连接'
-      : '本地模式，可连接 Supabase';
+      ? '已连接 Supabase'
+      : '可连接 Supabase';
   const syncStatusLabel =
     syncState.status === 'syncing'
       ? '正在同步'
       : syncState.status === 'error'
-        ? '发生错误'
+        ? '同步遇到一点问题'
         : hasSupabaseSession
-          ? '已登录，可同步'
+          ? '已登录，训练结束后会自动同步'
           : supabaseReady
-            ? '环境已就绪，等待登录'
-            : '等待配置环境变量';
+            ? '可以登录并同步'
+            : '当前只在本地保存';
   const leaderboardLabel =
     remoteLeaderboardStatus === 'ready'
       ? `已读取 ${remoteLeaderboardCount} 名公开玩家`
       : remoteLeaderboardStatus === 'loading'
-        ? '正在读取远端公开榜单'
+        ? '正在更新榜单'
         : remoteLeaderboardStatus === 'error'
-          ? '远端榜单读取失败，当前会退回本地预演榜'
+          ? '榜单暂时没有更新'
           : remoteLeaderboardStatus === 'empty'
-            ? '远端榜单目前为空，当前会退回本地预演榜'
-            : '尚未开始读取远端榜单';
+            ? '榜单里还没有公开资料'
+            : '还没有读取榜单';
 
   return (
     <div className="space-y-6">
@@ -88,11 +88,11 @@ export default function SettingsPage({
         <h1 className="mt-3 text-3xl font-semibold text-white">Settings & Sync</h1>
         <p className="mt-2 text-sm text-slate-400">设置与同步</p>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-          这里已经不只是训练开关，而是整套产品的控制台。训练参数、公开资料、同步状态、导入导出和未来 Supabase 登录都会从这里进入。
+          这里可以调整训练节奏、公开资料和同步方式，也可以整理自己的数据。
         </p>
       </section>
 
-      <SectionShell title="训练模式" description="训练页负责执行，设置页负责把节律规则和默认行为明确下来。">
+      <SectionShell title="训练模式" description="选一个适合自己的节奏。之后随时可以回来调整。">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           {[
             { key: 'basic', label: '基础', desc: '55–85 秒刺激，30–90 秒休息，适合把节律先练准。' },
@@ -116,7 +116,7 @@ export default function SettingsPage({
         </div>
       </SectionShell>
 
-      <SectionShell title="训练偏好" description="这里的开关决定记录方式、提示方式和移动端动画密度。">
+      <SectionShell title="训练偏好" description="这些开关会影响提示音、记录方式和页面动效。">
         <div className="grid gap-4 lg:grid-cols-2">
           {[
             {
@@ -223,7 +223,7 @@ export default function SettingsPage({
         </SectionShell>
       ) : null}
 
-      <SectionShell title="公开资料" description="真实天梯只公开昵称、头像种子、代表勋章和派生指标，不展示原始训练细节。">
+      <SectionShell title="公开资料" description="这里决定别人能在榜单里看到什么。训练细节仍然保留在你的私人记录里。">
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-[24px] border border-white/8 bg-black/20 p-4">
             <label className="block text-sm text-slate-400">
@@ -291,16 +291,16 @@ export default function SettingsPage({
         </div>
       </SectionShell>
 
-      <SectionShell title="同步状态" description="Supabase 登录和同步边界已经预留好；如果当前还没有配置环境变量，这里会先以本地模式运行。">
+      <SectionShell title="同步状态" description="登录 Supabase 后，训练记录会保存在本地，也会同步到云端。换设备时会更方便。">
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-[24px] border border-white/8 bg-black/20 p-4">
-            <div className="text-sm font-medium text-white">当前提供方</div>
+            <div className="text-sm font-medium text-white">保存位置</div>
             <div className="mt-3 text-2xl font-semibold text-white">{providerLabel}</div>
             <div className="mt-1 text-sm text-slate-400">状态：{syncStatusLabel}</div>
             <div className="mt-2 text-xs text-slate-500">
               {supabaseReady
-                ? `Supabase 项目已检测到${supabaseProjectHost ? `：${supabaseProjectHost}` : '。'}`
-                : '尚未检测到完整的 Supabase 环境变量。'}
+                ? `已检测到 Supabase 项目${supabaseProjectHost ? `：${supabaseProjectHost}` : '。'}`
+                : '还没有检测到完整的 Supabase 环境变量。'}
             </div>
             {syncState.lastSyncedAt ? <div className="mt-2 text-xs text-slate-500">最近同步：{new Date(syncState.lastSyncedAt).toLocaleString()}</div> : null}
             {syncState.userId ? <div className="mt-2 text-xs text-slate-500">用户 ID：{syncState.userId}</div> : null}
@@ -317,7 +317,7 @@ export default function SettingsPage({
           <div className="rounded-[24px] border border-white/8 bg-black/20 p-4">
             <div className="text-sm font-medium text-white">同步操作</div>
             <p className="mt-3 text-sm leading-6 text-slate-400">
-              这里现在已经不只是占位入口，而是完整的联调控制区。先发 Magic Link 完成登录，再把本地训练、派生指标和公开资料同步到 Supabase。
+              登录之后，训练结束会自动同步。这里保留手动同步按钮，方便你马上刷新云端数据。
             </p>
             <label className="mt-4 block text-sm text-slate-400">
               登录邮箱
@@ -347,7 +347,7 @@ export default function SettingsPage({
                 onClick={onSyncNow}
                 disabled={!supabaseReady || !hasSupabaseSession || syncState.status === 'syncing'}
               >
-                立即同步
+                手动同步
               </button>
               <button
                 type="button"
@@ -359,13 +359,13 @@ export default function SettingsPage({
               </button>
             </div>
             <p className="mt-4 text-xs leading-6 text-slate-500">
-              逻辑上仍然会保留本地存储，所以即使退出 Supabase，设备上的本地记录也不会丢失；变化只在于云端登录、同步与公开榜单是否真正接入。
+              本地记录会一直保留。退出 Supabase 后，当前设备里的数据仍然可以照常查看。
             </p>
           </div>
         </div>
       </SectionShell>
 
-      <SectionShell title="数据管理" description="导入、导出和账本式浏览都在这里处理，这样复盘页可以更专注于阅读与判断。">
+      <SectionShell title="数据管理" description="这里可以导入、导出和查看历史记录。">
         {dataPanel}
       </SectionShell>
     </div>

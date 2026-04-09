@@ -43,15 +43,15 @@ export function describeSupabaseError(error: unknown) {
     };
 
     if (candidate.code === 'PGRST205' || candidate.code === '42P01') {
-      return 'Supabase schema is not initialized yet. Run supabase/migrations/20260408_v2_bootstrap.sql in the Supabase SQL Editor.';
+      return '云端数据库还没有准备好，请先在 Supabase 里执行初始化 SQL。';
     }
 
     if (candidate.code === '42501') {
-      return 'Supabase permissions are blocking this request. Check the RLS policies for the target table or view.';
+      return '当前账号暂时没有这项权限，请检查 Supabase 的访问策略。';
     }
 
     if (candidate.message === 'Auth session missing!') {
-      return 'Supabase session is missing. Sign in with Magic Link before syncing.';
+      return '请先登录 Supabase，再继续同步。';
     }
 
     if (candidate.message) {
@@ -59,7 +59,7 @@ export function describeSupabaseError(error: unknown) {
     }
   }
 
-  return 'Supabase request failed.';
+  return '同步暂时失败，请稍后再试。';
 }
 
 function requireClient() {

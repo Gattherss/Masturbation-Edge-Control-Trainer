@@ -24,8 +24,8 @@ export default function LadderPage({
 }: LadderPageProps) {
   const leaderboardDescription =
     leaderboardSource === 'supabase'
-      ? '当前榜单来自 Supabase 的公开视图，展示的已经是远端赛季排名。'
-      : '当前仍在展示本地预演榜；只要远端公开视图可用，这里就会自动切换成真实赛季榜。';
+      ? '这里显示当前公开榜单，只会展示你愿意公开的昵称、简介和勋章。'
+      : '登录并同步后，这里会显示公开榜单。现在先放一份参考排名。';
 
   return (
     <div className="space-y-6">
@@ -80,17 +80,17 @@ export default function LadderPage({
           </div>
           {leaderboardStatus === 'loading' ? (
             <div className="mt-4 rounded-[18px] border border-sky-300/15 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
-              正在读取 Supabase 公开榜单，如果远端数据可用，这里会自动切换到真实赛季排行。
+              正在更新榜单，请稍等一下。
             </div>
           ) : null}
           {leaderboardStatus === 'empty' ? (
             <div className="mt-4 rounded-[18px] border border-amber-300/15 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
-              远端公开榜单目前还是空的，所以这里暂时继续显示本地预演榜。
+              公开榜单里还没有内容，先看看这份参考排名也可以。
             </div>
           ) : null}
           {leaderboardStatus === 'error' ? (
             <div className="mt-4 rounded-[18px] border border-rose-300/15 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
-              远端榜单读取失败：{leaderboardError ?? '未知错误'}。当前已自动退回本地预演榜。
+              榜单暂时没有更新：{leaderboardError ?? '未知错误'}。先看看当前这份参考排名。
             </div>
           ) : null}
           <div className="mt-5 space-y-3">

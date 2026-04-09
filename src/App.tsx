@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TrainingWorkspace } from '@/features/training/TrainingWorkspace';
 import { getPlan, loadCustomPlan, saveCustomPlan } from '@/lib/plans';
 import { loadSettings, saveSettings } from '@/lib/settings';
@@ -14,7 +14,7 @@ import { loadProfile, persistProfile } from '@/lib/profile';
 import { getSyncState, persistSyncState } from '@/lib/sync';
 import { getSupabaseEnv } from '@/lib/supabase';
 import { MedalCard } from '@/components/MedalCard';
-import type { Badge, Baseline, LeaderboardEntry, PublicProfile, Session, Settings as AppSettings, SyncState } from '@/types/models';
+import type { Badge, Baseline, LadderRating, LeaderboardEntry, PublicProfile, Session, Settings as AppSettings, SyncState } from '@/types/models';
 import type { FinalizeResult } from '@/services/scoringPipeline';
 import {
   describeSupabaseError,
@@ -103,6 +103,7 @@ export default function App() {
   const [remoteLeaderboard, setRemoteLeaderboard] = useState<LeaderboardEntry[] | null>(null);
   const [remoteLeaderboardStatus, setRemoteLeaderboardStatus] = useState<RemoteLeaderboardStatus>('idle');
   const [remoteLeaderboardError, setRemoteLeaderboardError] = useState<string | null>(null);
+  const autoSyncInFlightRef = useRef(false);
 
   const plan = useMemo(
     () => (settings.mode === 'custom' ? customPlan : getPlan(settings.mode)),
@@ -345,6 +346,70 @@ export default function App() {
     }
   }, [currentSeason, handleSyncStateChange, ladderRating, medals, profile, refreshRemoteLeaderboard, sessions, syncState]);
 
+  const syncArtifacts = useCallback(async (payload?: {
+    sessions?: Session[];
+    medals?: Badge[];
+    ladderRating?: LadderRating;
+    successMessage?: string;
+    failureMessage?: string;
+    silentSuccess?: boolean;
+  }) => {
+    if (!supabaseReady || !syncState.userId || autoSyncInFlightRef.current) {
+      return false;
+    }
+
+    autoSyncInFlightRef.current = true;
+
+    try {
+      handleSyncStateChange({
+        ...syncState,
+        provider: 'supabase',
+        status: 'syncing',
+        lastError: undefined
+      });
+
+      const sessionsToSync = payload?.sessions ?? sessions;
+      const medalsToSync = payload?.medals ?? medals;
+      const ladderToSync = payload?.ladderRating ?? ladderRating;
+      const result = await syncLocalArtifacts({
+        syncState,
+        profile,
+        sessions: sessionsToSync,
+        medals: medalsToSync,
+        ladderRating: ladderToSync,
+        season: currentSeason
+      });
+
+      handleSyncStateChange({
+        ...syncState,
+        provider: 'supabase',
+        status: 'idle',
+        lastSyncedAt: new Date().toISOString(),
+        lastError: undefined
+      });
+
+      void refreshRemoteLeaderboard();
+
+      if (!payload?.silentSuccess) {
+        setToast(payload?.successMessage ?? `已同步 ${result.syncedSessions} 条记录和 ${result.syncedMedals} 枚勋章。`);
+      }
+
+      return true;
+    } catch (error) {
+      const message = describeSupabaseError(error);
+      handleSyncStateChange({
+        ...syncState,
+        provider: 'supabase',
+        status: 'error',
+        lastError: message
+      });
+      setToast(payload?.failureMessage ?? message);
+      return false;
+    } finally {
+      autoSyncInFlightRef.current = false;
+    }
+  }, [currentSeason, handleSyncStateChange, ladderRating, medals, profile, refreshRemoteLeaderboard, sessions, supabaseReady, syncState]);
+
   const handleDisconnectSupabase = useCallback(async () => {
     try {
       await signOutSupabase();
@@ -372,6 +437,8 @@ export default function App() {
       const mergedMedals = mergeUnlockedMedals(medals, evaluateBadges(result.sessions));
       const existingCodes = new Set(medals.map((medal) => medal.code));
       const newMedals = mergedMedals.filter((medal) => !existingCodes.has(medal.code));
+      const nextSnapshot = buildMasterySnapshot(result.sessions);
+      const nextLadderRating = buildLadderRating(nextSnapshot);
 
       setSessions(result.sessions);
       setBaseline(result.baseline);
@@ -379,16 +446,30 @@ export default function App() {
       setNarrative(result.narrative);
       setSuggestions(result.suggestions);
 
+      let savedMessage = result.baselineMessage ?? '已保存训练记录';
+
       if (newMedals.length > 0) {
         const names = newMedals.slice(0, 2).map((medal) => medal.name).join('、');
         const more = newMedals.length > 2 ? ' …' : '';
         const prefix = result.baselineMessage ? `${result.baselineMessage} ` : '';
-        setToast(`${prefix}新勋章：${names}${more}`);
-      } else {
-        setToast(result.baselineMessage ?? '已保存训练记录');
+        savedMessage = `${prefix}新勋章：${names}${more}`;
       }
+
+      if (supabaseReady && syncState.userId) {
+        setToast(`${savedMessage} 正在同步到云端…`);
+        void syncArtifacts({
+          sessions: result.sessions,
+          medals: mergedMedals,
+          ladderRating: nextLadderRating,
+          successMessage: `${savedMessage} 已同步到云端。`,
+          failureMessage: `${savedMessage} 已保存在当前设备，云端同步稍后再试。`
+        });
+        return;
+      }
+
+      setToast(savedMessage);
     },
-    [medals]
+    [medals, supabaseReady, syncState.userId, syncArtifacts]
   );
 
   const trainingCompanion = (
@@ -551,7 +632,7 @@ export default function App() {
                 onProfileChange={handleProfileChange}
                 onSyncStateChange={handleSyncStateChange}
                 onRequestMagicLink={handleRequestMagicLink}
-                onSyncNow={handleSyncNow}
+                onSyncNow={() => void syncArtifacts()}
                 onSignOutSupabase={handleDisconnectSupabase}
               />
             ) : null}
