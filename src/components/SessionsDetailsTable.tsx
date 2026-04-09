@@ -15,6 +15,7 @@ interface Props {
   profile?: PublicProfile;
   syncState?: SyncState;
   onDataChanged?: () => void;
+  onDeleteSession?: (session: Session) => void;
   limit?: number;
   title?: string;
   showTransferTools?: boolean;
@@ -30,6 +31,7 @@ export default function SessionsDetailsTable({
   profile,
   syncState,
   onDataChanged,
+  onDeleteSession,
   limit = 10,
   title = '详细数据',
   showTransferTools = true
@@ -275,6 +277,18 @@ export default function SessionsDetailsTable({
                     </span>
                   ))}
                 </div>
+
+                {onDeleteSession ? (
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      className="rounded-full bg-rose-500/15 px-3 py-1.5 text-xs font-medium text-rose-200 hover:bg-rose-500/25"
+                      onClick={() => onDeleteSession(s)}
+                    >
+                      删除这条记录
+                    </button>
+                  </div>
+                ) : null}
               </article>
             );
           })}
@@ -290,6 +304,7 @@ export default function SessionsDetailsTable({
                 <th className="w-28 p-2 text-right">休息</th>
                 <th className="w-14 p-2 text-right">CEI</th>
                 <th className="p-2 text-left">分段</th>
+                {onDeleteSession ? <th className="w-24 p-2 text-right">操作</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -328,6 +343,17 @@ export default function SessionsDetailsTable({
                         ))}
                       </div>
                     </td>
+                    {onDeleteSession ? (
+                      <td className="p-2 text-right">
+                        <button
+                          type="button"
+                          className="rounded-full bg-rose-500/15 px-3 py-1 text-[11px] font-medium text-rose-200 hover:bg-rose-500/25"
+                          onClick={() => onDeleteSession(s)}
+                        >
+                          删除
+                        </button>
+                      </td>
+                    ) : null}
                   </tr>
                 );
               })}

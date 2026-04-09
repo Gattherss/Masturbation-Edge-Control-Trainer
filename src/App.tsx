@@ -4,10 +4,10 @@ import { getPlan, loadCustomPlan, saveCustomPlan } from '@/lib/plans';
 import { loadSettings, saveSettings } from '@/lib/settings';
 import SessionsDetailsTable from '@/components/SessionsDetailsTable';
 import { todayKey } from '@/lib/time';
-import { listSessions } from '@/data/repositories/sessionRepo';
+import { listSessions, removeSession as removeStoredSession } from '@/data/repositories/sessionRepo';
 import { compareToBaseline } from '@/lib/baseline';
 import { evaluateBadges, getFeaturedBadge, getNextBadgeCandidates, normalizeMedalUnlocks } from '@/lib/badges';
-import { loadBadges, loadBaseline } from '@/lib/storage';
+import { loadBadges, loadBaseline, saveBadges } from '@/lib/storage';
 import { buildMasterySnapshot } from '@/lib/mastery';
 import { buildLeaderboard, buildLadderRating, getCurrentSeason } from '@/lib/ladder';
 import { loadProfile, persistProfile } from '@/lib/profile';
@@ -16,6 +16,7 @@ import { getSupabaseEnv } from '@/lib/supabase';
 import { MedalCard } from '@/components/MedalCard';
 import type { Badge, Baseline, LadderRating, LeaderboardEntry, PublicProfile, Session, Settings as AppSettings, SyncState } from '@/types/models';
 import type { FinalizeResult } from '@/services/scoringPipeline';
+import { handleBaselineAfterDelete } from '@/services/baselineService';
 import {
   describeSupabaseError,
   fetchLeaderboard,
@@ -84,6 +85,13 @@ function getEnglishTabLabel(key: ViewTab) {
     case 'settings':
       return { label: 'Settings', short: 'ST' };
   }
+}
+
+function getSyncSummaryValue(syncState: SyncState, supabaseReady: boolean) {
+  if (syncState.status === 'syncing') return '同步中';
+  if (syncState.status === 'error') return '稍后重试';
+  if (syncState.userId) return '已连接';
+  return supabaseReady ? '可同步' : '仅本地';
 }
 
 export default function App() {
@@ -275,7 +283,7 @@ export default function App() {
 
   const handleRequestMagicLink = useCallback(async () => {
     if (!syncState.email) {
-      setToast('先填写登录邮箱，再发送 Magic Link。');
+      setToast('先填登录邮箱，再发送登录链接。');
       return;
     }
 
@@ -293,7 +301,7 @@ export default function App() {
         status: 'idle',
         lastError: undefined
       });
-      setToast('Magic Link 已发送，请去邮箱完成登录。');
+      setToast('登录链接已发送，请去邮箱完成确认。');
     } catch (error) {
       const message = describeSupabaseError(error);
       handleSyncStateChange({
@@ -443,6 +451,7 @@ export default function App() {
       setSessions(result.sessions);
       setBaseline(result.baseline);
       setMedals(mergedMedals);
+      saveBadges(mergedMedals);
       setNarrative(result.narrative);
       setSuggestions(result.suggestions);
 
@@ -472,15 +481,65 @@ export default function App() {
     [medals, supabaseReady, syncState.userId, syncArtifacts]
   );
 
+  const handleDeleteSession = useCallback((session: Session) => {
+      if (typeof window !== 'undefined') {
+        const confirmed = window.confirm(`确定删除 ${new Date(session.startAt).toLocaleString()} 这条记录吗？`);
+        if (!confirmed) {
+          return;
+        }
+      }
+
+      const removed = removeStoredSession(session.id);
+
+      if (!removed) {
+        setToast('这条记录已经不在了。');
+        return;
+      }
+
+      const nextSessions = listSessions();
+      const baselineResult = handleBaselineAfterDelete(removed, nextSessions, baseline);
+      const nextMedals = normalizeMedalUnlocks(evaluateBadges(nextSessions));
+      const nextSnapshot = buildMasterySnapshot(nextSessions);
+      const nextLadderRating = buildLadderRating(nextSnapshot);
+
+      saveBadges(nextMedals);
+      setSessions(nextSessions);
+      setBaseline(baselineResult.baseline);
+      setMedals(nextMedals);
+      setNarrative(null);
+      setSuggestions([]);
+
+      const deletedMessage = baselineResult.message
+        ? `已删除这条记录。${baselineResult.message}`
+        : '已删除这条记录。';
+
+      if (supabaseReady && syncState.userId) {
+        setToast(`${deletedMessage} 正在同步变更…`);
+        void syncArtifacts({
+          sessions: nextSessions,
+          medals: nextMedals,
+          ladderRating: nextLadderRating,
+          successMessage: `${deletedMessage} 云端也已更新。`,
+          failureMessage: `${deletedMessage} 本地已经更新，云端稍后再试。`
+        });
+        return;
+      }
+
+      setToast(deletedMessage);
+    },
+    [baseline, supabaseReady, syncState.userId, syncArtifacts]
+  );
+
   const trainingCompanion = (
     <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
       <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.5)] backdrop-blur-3xl">
-        <h2 className="text-3xl font-semibold text-white drop-shadow-md xl:text-4xl">Season Snapshot / 当赛季表现 (S{currentSeason.name})</h2>
+        <h2 className="text-3xl font-semibold text-white drop-shadow-md xl:text-4xl">当赛季表现</h2>
+        <p className="mt-2 text-sm text-slate-400">看看这段时间的分数、段位和最近一次保存的内容。</p>
         <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <SummaryChip label="Mastery" value={String(Math.round(snapshot.masteryScore))} />
-          <SummaryChip label="Ladder" value={`${ladderRating.tier} ${ladderRating.division}`} />
-          <SummaryChip label="Score" value={String(ladderRating.score)} />
-          <SummaryChip label="Today" value={todayKey()} />
+          <SummaryChip label="长期分" value={String(Math.round(snapshot.masteryScore))} />
+          <SummaryChip label="段位" value={`${ladderRating.tier} ${ladderRating.division}`} />
+          <SummaryChip label="积分" value={String(ladderRating.score)} />
+          <SummaryChip label="今天" value={todayKey()} />
         </div>
         {narrative ? (
           <div className="mt-5 rounded-[24px] border border-white/8 bg-black/20 p-4">
@@ -521,8 +580,9 @@ export default function App() {
       profile={profile}
       syncState={syncState}
       onDataChanged={refreshAppState}
+      onDeleteSession={handleDeleteSession}
       limit={20}
-      title="数据账本与导入导出"
+      title="数据与记录"
       showTransferTools
     />
   );
@@ -538,9 +598,9 @@ export default function App() {
               <p className="mt-3 text-lg text-slate-300 xl:text-xl">寸止边缘训练器</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              <SummaryChip label="Season" value={currentSeason.name} />
-              <SummaryChip label="Sync" value={`${syncState.provider} · ${syncState.status}`} />
-              <SummaryChip label="Sessions" value={`${sessions.length} 回合`} />
+              <SummaryChip label="赛季" value={currentSeason.name} />
+              <SummaryChip label="同步" value={getSyncSummaryValue(syncState, supabaseReady)} />
+              <SummaryChip label="记录" value={`${sessions.length} 次`} />
             </div>
           </div>
 
@@ -578,7 +638,7 @@ export default function App() {
           <Suspense
             fallback={
               <section className="rounded-[30px] border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-400 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-                页面正在装配中……
+                页面加载中……
               </section>
             }
           >
@@ -594,6 +654,7 @@ export default function App() {
                 currentPlan={plan}
                 settings={settings}
                 onDataChanged={refreshAppState}
+                onDeleteSession={handleDeleteSession}
               />
             ) : null}
 

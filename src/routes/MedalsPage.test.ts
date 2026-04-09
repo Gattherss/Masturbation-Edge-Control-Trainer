@@ -16,7 +16,7 @@ describe('MedalsPage', () => {
 
     render(React.createElement(MedalsPage, { sessions, medals }));
 
-    expect(screen.getByRole('heading', { name: 'Metal Medal Gallery' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '勋章墙' })).toBeInTheDocument();
     expect(screen.getByText('黑铁节律章')).toBeInTheDocument();
     expect(screen.getByText('黑铁控稳章')).toBeInTheDocument();
   });

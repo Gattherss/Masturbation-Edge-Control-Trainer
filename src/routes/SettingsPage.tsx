@@ -84,11 +84,11 @@ export default function SettingsPage({
   return (
     <div className="space-y-6">
       <section className="rounded-[32px] border border-white/10 bg-white/[0.05] p-5 shadow-[0_30px_100px_rgba(0,0,0,0.32)] backdrop-blur-xl">
-        <p className="text-[11px] uppercase tracking-[0.36em] text-slate-500">Control Room</p>
-        <h1 className="mt-3 text-3xl font-semibold text-white">Settings & Sync</h1>
-        <p className="mt-2 text-sm text-slate-400">设置与同步</p>
+        <p className="text-[11px] uppercase tracking-[0.36em] text-slate-500">设置</p>
+        <h1 className="mt-3 text-3xl font-semibold text-white">设置与同步</h1>
+        <p className="mt-2 text-sm text-slate-400">常用的节奏、资料和数据都放在这里。</p>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-          这里可以调整训练节奏、公开资料和同步方式，也可以整理自己的数据。
+          想改训练节奏、改公开资料，或者看同步情况、整理记录，都可以从这里进入。
         </p>
       </section>
 
@@ -223,7 +223,7 @@ export default function SettingsPage({
         </SectionShell>
       ) : null}
 
-      <SectionShell title="公开资料" description="这里决定别人能在榜单里看到什么。训练细节仍然保留在你的私人记录里。">
+      <SectionShell title="公开资料" description="这里决定别人能看到哪些信息。训练内容仍然只留在你自己的记录里。">
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-[24px] border border-white/8 bg-black/20 p-4">
             <label className="block text-sm text-slate-400">
@@ -291,7 +291,7 @@ export default function SettingsPage({
         </div>
       </SectionShell>
 
-      <SectionShell title="同步状态" description="登录 Supabase 后，训练记录会保存在本地，也会同步到云端。换设备时会更方便。">
+      <SectionShell title="同步状态" description="登录后，记录会先保存在本地，然后自动同步到 Supabase。换设备时会方便很多。">
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-[24px] border border-white/8 bg-black/20 p-4">
             <div className="text-sm font-medium text-white">保存位置</div>
@@ -300,7 +300,7 @@ export default function SettingsPage({
             <div className="mt-2 text-xs text-slate-500">
               {supabaseReady
                 ? `已检测到 Supabase 项目${supabaseProjectHost ? `：${supabaseProjectHost}` : '。'}`
-                : '还没有检测到完整的 Supabase 环境变量。'}
+                : '当前还没有接上 Supabase，先用本地保存也可以。'}
             </div>
             {syncState.lastSyncedAt ? <div className="mt-2 text-xs text-slate-500">最近同步：{new Date(syncState.lastSyncedAt).toLocaleString()}</div> : null}
             {syncState.userId ? <div className="mt-2 text-xs text-slate-500">用户 ID：{syncState.userId}</div> : null}
@@ -317,7 +317,7 @@ export default function SettingsPage({
           <div className="rounded-[24px] border border-white/8 bg-black/20 p-4">
             <div className="text-sm font-medium text-white">同步操作</div>
             <p className="mt-3 text-sm leading-6 text-slate-400">
-              登录之后，训练结束会自动同步。这里保留手动同步按钮，方便你马上刷新云端数据。
+              登录之后，每次训练结束都会自动同步。下面这个按钮留着，方便你立刻再同步一次。
             </p>
             <label className="mt-4 block text-sm text-slate-400">
               登录邮箱
@@ -339,7 +339,7 @@ export default function SettingsPage({
                 onClick={onRequestMagicLink}
                 disabled={!supabaseReady || syncState.status === 'syncing'}
               >
-                发送 Magic Link
+                发送登录链接
               </button>
               <button
                 type="button"

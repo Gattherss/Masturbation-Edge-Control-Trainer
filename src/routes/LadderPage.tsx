@@ -24,20 +24,20 @@ export default function LadderPage({
 }: LadderPageProps) {
   const leaderboardDescription =
     leaderboardSource === 'supabase'
-      ? '这里显示当前公开榜单，只会展示你愿意公开的昵称、简介和勋章。'
-      : '登录并同步后，这里会显示公开榜单。现在先放一份参考排名。';
+      ? '这里显示公开榜单，别人能看到的只有你愿意公开的资料。'
+      : '登录并同步后，这里会换成公开榜单。现在先看一份本地示例。';
 
   return (
     <div className="space-y-6">
       <section className="rounded-[32px] border border-white/10 bg-white/[0.05] p-5 shadow-[0_30px_100px_rgba(0,0,0,0.32)] backdrop-blur-xl">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.36em] text-slate-500">Season Ladder</p>
-            <h1 className="mt-3 text-3xl font-semibold text-white drop-shadow-md">Ladder & Public Profile</h1>
-            <p className="mt-2 text-sm text-slate-400">真实天梯与公开资料</p>
+            <p className="text-[11px] uppercase tracking-[0.36em] text-slate-500">天梯</p>
+            <h1 className="mt-3 text-3xl font-semibold text-white drop-shadow-md">赛季排名</h1>
+            <p className="mt-2 text-sm text-slate-400">这里会显示本赛季的积分、状态和公开资料。</p>
           </div>
           <div className="rounded-[24px] border border-white/10 bg-black/25 px-4 py-3 text-right text-sm text-slate-300">
-            <div className="text-xs uppercase tracking-[0.28em] text-slate-500">{season.name}</div>
+            <div className="text-xs uppercase tracking-[0.28em] text-slate-500">本赛季 · {season.name}</div>
             <div className="mt-2 text-3xl font-semibold text-white">{rating.score}</div>
             <div className="mt-1 text-xs text-slate-400">{rating.tier} {rating.division} · 百分位 {rating.percentile}%</div>
           </div>
@@ -45,24 +45,24 @@ export default function LadderPage({
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4 shadow-inner">
-            <div className="text-xs uppercase tracking-[0.28em] text-slate-500">Promotion</div>
+            <div className="text-xs uppercase tracking-[0.28em] text-slate-500">晋级进度</div>
             <div className="mt-3 text-2xl font-semibold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">{rating.progressToNext}%</div>
-            <p className="mt-2 text-[11px] text-slate-400">本阶段晋级进度</p>
+            <p className="mt-2 text-[11px] text-slate-400">离下一档还有多远</p>
           </div>
           <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4 shadow-inner">
-            <div className="text-xs uppercase tracking-[0.28em] text-slate-500">Change</div>
+            <div className="text-xs uppercase tracking-[0.28em] text-slate-500">最近变化</div>
             <div className="mt-3 text-2xl font-semibold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">{rating.change >= 0 ? `+${rating.change}` : rating.change}</div>
-            <p className="mt-2 text-[11px] text-slate-400">近期 Mastery 浮动趋势</p>
+            <p className="mt-2 text-[11px] text-slate-400">最近这段时间的起伏</p>
           </div>
           <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4 shadow-inner">
-            <div className="text-xs uppercase tracking-[0.28em] text-slate-500">Confidence</div>
+            <div className="text-xs uppercase tracking-[0.28em] text-slate-500">可信度</div>
             <div className="mt-3 text-2xl font-semibold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">{Math.round(rating.confidenceScore)}%</div>
-            <p className="mt-2 text-[11px] text-slate-400">模型评估置信度</p>
+            <p className="mt-2 text-[11px] text-slate-400">这份评估目前有多稳</p>
           </div>
           <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4 shadow-inner">
-            <div className="text-xs uppercase tracking-[0.28em] text-slate-500">Status</div>
-            <div className="mt-3 text-2xl font-semibold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">{rating.provisional ? '临时评估' : '正式排名'}</div>
-            <p className="mt-2 text-[11px] text-slate-400">{rating.provisional ? '定级赛进行中' : '已获得正式段位'}</p>
+            <div className="text-xs uppercase tracking-[0.28em] text-slate-500">当前状态</div>
+            <div className="mt-3 text-2xl font-semibold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">{rating.provisional ? '暂定' : '已定级'}</div>
+            <p className="mt-2 text-[11px] text-slate-400">{rating.provisional ? '记录还在继续累积' : '这一季已经有正式段位了'}</p>
           </div>
         </div>
       </section>
@@ -85,12 +85,12 @@ export default function LadderPage({
           ) : null}
           {leaderboardStatus === 'empty' ? (
             <div className="mt-4 rounded-[18px] border border-amber-300/15 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
-              公开榜单里还没有内容，先看看这份参考排名也可以。
+              公开榜单里还没有内容，先看看这份示例榜单。
             </div>
           ) : null}
           {leaderboardStatus === 'error' ? (
             <div className="mt-4 rounded-[18px] border border-rose-300/15 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
-              榜单暂时没有更新：{leaderboardError ?? '未知错误'}。先看看当前这份参考排名。
+              榜单暂时没有更新：{leaderboardError ?? '未知错误'}。先看看当前这份示例榜单。
             </div>
           ) : null}
           <div className="mt-5 space-y-3">
@@ -114,7 +114,7 @@ export default function LadderPage({
 
         <div className="space-y-6">
           <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.5)] backdrop-blur-3xl">
-            <h2 className="text-2xl font-semibold text-white">公开资料</h2>
+            <h2 className="text-2xl font-semibold text-white">我的公开资料</h2>
             <dl className="mt-4 space-y-3 text-sm text-slate-300">
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-slate-400">昵称</dt>

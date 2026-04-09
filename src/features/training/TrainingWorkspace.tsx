@@ -38,7 +38,7 @@ export function TrainingWorkspace({ plan, settings, onSaved, onToast }: Training
   const openFinalizeModal = useCallback(() => {
     const handle = machine.requestFinalize();
     if (!handle) {
-      onToast('当前没有可保存的训练数据');
+      onToast('当前还没有可保存的训练记录');
       return;
     }
     setNoteModalOpen(true);
@@ -73,7 +73,7 @@ export function TrainingWorkspace({ plan, settings, onSaved, onToast }: Training
           setNoteModalOpen(false);
           machine.cancelFinalize();
         }}
-        title="记录训练 / Save Session"
+        title="保存训练记录"
         size="md"
         footer={
           <div className="flex justify-end gap-2">
@@ -82,21 +82,21 @@ export function TrainingWorkspace({ plan, settings, onSaved, onToast }: Training
               className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200"
               onClick={() => finalizeSession({ note: '', perceivedArousal: null, stopReason: '' })}
             >
-              跳过 / Skip
+              直接保存
             </button>
             <button
               type="button"
               className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950"
               onClick={() => finalizeSession(noteForm)}
             >
-              提交并保存 / Save
+              保存
             </button>
           </div>
         }
       >
         <div className="space-y-4">
           <label className="block text-sm">
-            <span className="text-slate-300">训练备注 / Notes</span>
+            <span className="text-slate-300">训练备注</span>
             <textarea
               className="mt-2 w-full rounded-[20px] border border-white/10 bg-black/30 px-4 py-3 text-sm text-slate-200"
               value={noteForm.note}
@@ -105,7 +105,7 @@ export function TrainingWorkspace({ plan, settings, onSaved, onToast }: Training
           </label>
           {settings.collectArousalOnFinish ? (
             <label className="block text-sm">
-              <span className="text-slate-300">主观强度（1-10） / Arousal</span>
+              <span className="text-slate-300">主观强度（1-10）</span>
               <input
                 type="number"
                 min={1}
@@ -122,13 +122,13 @@ export function TrainingWorkspace({ plan, settings, onSaved, onToast }: Training
             </label>
           ) : null}
           <label className="block text-sm">
-            <span className="text-slate-300">停止原因 / Stop reason</span>
+            <span className="text-slate-300">停止原因</span>
             <select
               className="mt-2 w-full rounded-[20px] border border-white/10 bg-black/30 px-4 py-3 text-sm text-slate-200"
               value={noteForm.stopReason}
               onChange={(event) => setNoteForm((prev) => ({ ...prev, stopReason: event.target.value }))}
             >
-              <option value="">未选择 / None</option>
+              <option value="">未选择</option>
               {['自然结束', '达到目标', '疲劳', '无聊', '射精', '其他'].map((reason) => (
                 <option key={reason} value={reason}>
                   {reason}

@@ -18,6 +18,7 @@ interface ReviewPageProps {
   currentPlan: Session['planSnapshot'];
   settings: Settings;
   onDataChanged: () => void;
+  onDeleteSession: (session: Session) => void;
 }
 
 function SnapshotTile({ label, value, help }: { label: string; value: string; help: string }) {
@@ -40,7 +41,8 @@ export default function ReviewPage({
   nextMedal,
   currentPlan,
   settings,
-  onDataChanged
+  onDataChanged,
+  onDeleteSession
 }: ReviewPageProps) {
   const recentWindow = findMasteryWindow(snapshot, 'recent');
   const currentWindow = findMasteryWindow(snapshot, 'current');
@@ -56,50 +58,50 @@ export default function ReviewPage({
       <section className="rounded-[32px] border border-white/10 bg-white/[0.05] p-5 shadow-[0_30px_100px_rgba(0,0,0,0.32)] backdrop-blur-xl">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.36em] text-slate-500">Review Forge</p>
-            <h1 className="mt-3 text-3xl font-semibold text-white">Review & Long-term Growth</h1>
-            <p className="mt-2 text-sm text-slate-400">复盘与长期成长</p>
+            <p className="text-[11px] uppercase tracking-[0.36em] text-slate-500">复盘</p>
+            <h1 className="mt-3 text-3xl font-semibold text-white">复盘与走势</h1>
+            <p className="mt-2 text-sm text-slate-400">把最近一段时间的状态放在一起看。</p>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-              这里不只回看最近一轮，而是把近期节律、56 天能力块和 4–6 个月前的锚点放在同一张桌面上，看你究竟是在前进，还是只是偶尔高光。
+              这里会把最近几周、这段时间的整体表现，还有更早之前的记录放在一起。看完这一页，你会更容易判断自己是稳稳往上走，还是只是偶尔状态好。
             </p>
           </div>
           <div className="rounded-[24px] border border-white/10 bg-black/25 px-4 py-3 text-sm text-slate-300">
-            <div className="text-xs uppercase tracking-[0.28em] text-slate-500">Ladder State</div>
+            <div className="text-xs uppercase tracking-[0.28em] text-slate-500">当前段位</div>
             <div className="mt-2 text-2xl font-semibold text-white">{ladderRating.tier} {ladderRating.division}</div>
-            <div className="mt-1 text-xs text-slate-400">阶位分 {ladderRating.score} · 百分位 {ladderRating.percentile}%</div>
+            <div className="mt-1 text-xs text-slate-400">积分 {ladderRating.score} · 百分位 {ladderRating.percentile}%</div>
           </div>
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <SnapshotTile
-            label="Mastery"
+            label="长期分"
             value={String(Math.round(snapshot.masteryScore))}
-            help="近期节律、当前能力块和稳定性合并得到的长期表现核心分。"
+            help="这里看的是一段时间里的整体状态，不只是单次发挥。"
           />
           <SnapshotTile
-            label="Growth"
+            label="成长"
             value={snapshot.growthScore == null ? '临时评估' : String(Math.round(snapshot.growthScore))}
-            help={snapshot.growthScore == null ? '历史锚点还不够厚，所以这段时间只按 mastery 评估。' : '把当前 56 天表现和 4–6 个月前的锚点放在一起看，专门衡量你有没有真的进步。'}
+            help={snapshot.growthScore == null ? '历史记录还不够多，先按这段时间的整体表现来估算。' : '这里会把现在和更早之前的记录对照起来，看进步有没有真正留下来。'}
           />
           <SnapshotTile
-            label="Consistency"
+            label="稳定度"
             value={String(Math.round(snapshot.consistencyScore))}
-            help="波动越小、样本越厚，这一项越高，它决定你的好状态是不是站得住。"
+            help="波动越小，这一项越高，它能帮你看出状态是不是越来越稳。"
           />
           <SnapshotTile
-            label="Confidence"
+            label="可信度"
             value={`${Math.round(snapshot.confidenceScore)}%`}
-            help="这是整套长期模型对自己判断的把握程度。样本少或者波动大，置信度就会被压下来。"
+            help="记录越多、波动越小，这里的判断就越有把握。"
           />
         </div>
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6">
-          <TrendsPage sessions={sessions} title="成长曲线与窗口比较" />
+          <TrendsPage sessions={sessions} title="最近走势" />
 
           <section className="rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-            <h2 className="text-xl font-semibold text-white">窗口切片</h2>
+            <h2 className="text-xl font-semibold text-white">三个时间窗</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[recentWindow, currentWindow, anchorWindow].filter(Boolean).map((window) => (
                 <div key={window?.key} className="rounded-[24px] border border-white/8 bg-black/20 p-4">
@@ -115,11 +117,11 @@ export default function ReviewPage({
                       <dd>{Math.round(window?.hwMedian ?? 0)}%</dd>
                     </div>
                     <div className="flex items-center justify-between">
-                      <dt>control 中位</dt>
+                      <dt>控制分中位</dt>
                       <dd>{Math.round(window?.controlMedian ?? 0)}</dd>
                     </div>
                     <div className="flex items-center justify-between">
-                      <dt>volatility</dt>
+                      <dt>波动</dt>
                       <dd>{window?.volatility.toFixed(1)}</dd>
                     </div>
                   </dl>
@@ -130,9 +132,9 @@ export default function ReviewPage({
 
           <section className="rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
             <h2 className="text-xl font-semibold text-white">日历与记录</h2>
-            <p className="mt-2 text-sm text-slate-400">移动端以折叠式浏览为主，想看细节时再展开，不让页面一开始就过重。</p>
+            <p className="mt-2 text-sm text-slate-400">先看日历，再往下翻最近的记录，会更轻松一些。</p>
             <div className="mt-5">
-              <Calendar sessions={sessions} />
+              <Calendar sessions={sessions} onDeleteSession={onDeleteSession} />
             </div>
             <div className="mt-6">
               <SessionsDetailsTable
@@ -141,8 +143,9 @@ export default function ReviewPage({
                 baseline={baseline}
                 currentPlan={fallbackPlan}
                 onDataChanged={onDataChanged}
+                onDeleteSession={onDeleteSession}
                 limit={20}
-                title="记录账本"
+                title="训练记录"
                 showTransferTools={false}
               />
             </div>

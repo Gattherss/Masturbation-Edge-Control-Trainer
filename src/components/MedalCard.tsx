@@ -1,5 +1,4 @@
 import { useId, useState } from 'react';
-import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import { Modal } from '@/components/Modal';
 import type { MedalCatalogItem } from '@/types/models';
@@ -156,17 +155,13 @@ export function MedalCard({ medal, unlocked, progressPercent = 0, hint, compact 
 
   return (
     <>
-    <motion.article
-      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={reduceMotion ? undefined : { y: -3, scale: 1.01 }}
-      whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-      transition={reduceMotion ? { duration: 0 } : { duration: 0.18 }}
+    <article
       onClick={() => setModalOpen(true)}
       className={clsx(
-        'relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04] p-4 shadow-[0_22px_60px_rgba(0,0,0,0.4)] backdrop-blur-3xl',
+        'relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04] p-4 shadow-[0_22px_60px_rgba(0,0,0,0.4)] backdrop-blur-3xl transition-[border-color,background-color,box-shadow,opacity] duration-200',
         compact ? 'min-h-[250px]' : 'min-h-[290px]',
-        !unlocked && 'opacity-80 saturate-50'
+        !unlocked && 'opacity-80 saturate-50',
+        !reduceMotion && 'hover:border-white/15 hover:bg-white/[0.055] hover:shadow-[0_28px_70px_rgba(0,0,0,0.44)]'
       )}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%),linear-gradient(180deg,rgba(255,255,255,0.07),transparent_42%,rgba(0,0,0,0.18))]" />
@@ -221,7 +216,7 @@ export function MedalCard({ medal, unlocked, progressPercent = 0, hint, compact 
           已锻造成形
         </div>
       )}
-    </motion.article>
+    </article>
 
     <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="勋章详情" size="sm">
       <div className="flex flex-col items-center pb-6 pt-4 text-center">

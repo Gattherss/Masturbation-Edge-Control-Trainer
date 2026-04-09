@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@/types/models';
 import { loadCheckins } from '@/lib/storage';
 import { todayKey } from '@/lib/time';
@@ -7,6 +7,7 @@ import { DayView } from './DayView';
 
 interface CalendarProps {
   sessions: Session[];
+  onDeleteSession?: (session: Session) => void;
 }
 
 function getMonthMatrix(date: Date) {
@@ -27,7 +28,7 @@ function getMonthMatrix(date: Date) {
   return weeks;
 }
 
-export function Calendar({ sessions }: CalendarProps) {
+export function Calendar({ sessions, onDeleteSession }: CalendarProps) {
   const [cursor, setCursor] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const groups = useMemo(() => {
@@ -46,6 +47,12 @@ export function Calendar({ sessions }: CalendarProps) {
   const inMonth = (d: Date) => d.getMonth() === month;
 
   const selectedSessions = selectedDay ? groups.get(selectedDay) ?? [] : [];
+
+  useEffect(() => {
+    if (selectedDay && selectedSessions.length === 0) {
+      setSelectedDay(null);
+    }
+  }, [selectedDay, selectedSessions.length]);
 
   return (
     <div className="rounded-[24px] border border-white/8 bg-black/20 p-4 sm:p-5">
@@ -112,7 +119,13 @@ export function Calendar({ sessions }: CalendarProps) {
       </div>
 
       <Modal open={!!selectedDay} onClose={() => setSelectedDay(null)} title={`日期 ${selectedDay ?? ''}`} size="lg">
-        <DayView dateKey={selectedDay ?? ''} sessions={selectedSessions} />
+        <DayView
+          dateKey={selectedDay ?? ''}
+          sessions={selectedSessions}
+          onDelete={(session) => {
+            onDeleteSession?.(session);
+          }}
+        />
       </Modal>
     </div>
   );

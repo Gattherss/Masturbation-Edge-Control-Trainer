@@ -319,6 +319,53 @@ export async function syncLocalArtifacts(params: {
   const { error: profileError } = await client.from('profiles').upsert(profileRow, { onConflict: 'user_id' });
   if (profileError) throw profileError;
 
+  const { data: existingSessionRows, error: existingSessionRowsError } = await client
+    .from('sessions_private')
+    .select('id')
+    .eq('user_id', user.id);
+  if (existingSessionRowsError) throw existingSessionRowsError;
+
+  const localSessionIds = new Set(params.sessions.map((session) => session.id));
+  const obsoleteSessionIds = (existingSessionRows ?? [])
+    .map((row) => row.id as string)
+    .filter((id) => !localSessionIds.has(id));
+
+  if (obsoleteSessionIds.length > 0) {
+    const { error: deleteMetricsError } = await client
+      .from('session_metrics')
+      .delete()
+      .eq('user_id', user.id)
+      .in('session_id', obsoleteSessionIds);
+    if (deleteMetricsError) throw deleteMetricsError;
+
+    const { error: deleteSessionsError } = await client
+      .from('sessions_private')
+      .delete()
+      .eq('user_id', user.id)
+      .in('id', obsoleteSessionIds);
+    if (deleteSessionsError) throw deleteSessionsError;
+  }
+
+  const { data: existingMedalRows, error: existingMedalRowsError } = await client
+    .from('medal_unlocks')
+    .select('medal_code')
+    .eq('user_id', user.id);
+  if (existingMedalRowsError) throw existingMedalRowsError;
+
+  const localMedalCodes = new Set(params.medals.map((medal) => medal.code));
+  const obsoleteMedalCodes = (existingMedalRows ?? [])
+    .map((row) => row.medal_code as string)
+    .filter((code) => !localMedalCodes.has(code));
+
+  if (obsoleteMedalCodes.length > 0) {
+    const { error: deleteMedalsError } = await client
+      .from('medal_unlocks')
+      .delete()
+      .eq('user_id', user.id)
+      .in('medal_code', obsoleteMedalCodes);
+    if (deleteMedalsError) throw deleteMedalsError;
+  }
+
   if (privateRows.length > 0) {
     const { error: privateError } = await client.from('sessions_private').upsert(privateRows, { onConflict: 'id' });
     if (privateError) throw privateError;
