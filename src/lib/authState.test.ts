@@ -97,7 +97,19 @@ describe('shouldOpenWelcomeGate', () => {
     ).toBe(false);
   });
 
-  it('opens again on an empty device even after guest mode was remembered', () => {
+  it('opens on an empty device before the user has made a choice', () => {
+    expect(
+      shouldOpenWelcomeGate({
+        supabaseReady: true,
+        authBootstrapComplete: true,
+        syncState: {},
+        welcomePromptState: null,
+        sessionCount: 0
+      })
+    ).toBe(true);
+  });
+
+  it('stays closed on an empty device after guest mode was remembered', () => {
     const welcomePromptState: WelcomePromptState = {
       mode: 'guest',
       updatedAt: '2026-04-09T00:00:00.000Z'
@@ -111,6 +123,6 @@ describe('shouldOpenWelcomeGate', () => {
         welcomePromptState,
         sessionCount: 0
       })
-    ).toBe(true);
+    ).toBe(false);
   });
 });

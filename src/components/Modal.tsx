@@ -12,9 +12,9 @@ interface ModalProps {
 }
 
 const sizeClass: Record<NonNullable<ModalProps['size']>, string> = {
-  sm: 'max-w-md',
-  md: 'max-w-2xl',
-  lg: 'max-w-4xl'
+  sm: 'sm:max-w-md',
+  md: 'sm:max-w-xl',
+  lg: 'sm:max-w-4xl'
 };
 
 export function Modal({ open, onClose, title, children, footer, size = 'md' }: ModalProps) {
@@ -50,13 +50,13 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/75 px-0 py-0 backdrop-blur-md sm:items-center sm:px-4 sm:py-8"
+      className="fixed inset-0 z-[60] flex items-start justify-center bg-slate-950/75 px-3 pb-6 pt-[max(0.75rem,env(safe-area-inset-top)+0.5rem)] backdrop-blur-md sm:items-center sm:px-4 sm:py-8"
       onClick={onClose}
     >
       <div
         className={clsx(
           'w-full overflow-hidden border border-white/10 bg-slate-950/92 shadow-[0_36px_100px_rgba(0,0,0,0.5)]',
-          'max-h-[88dvh] rounded-t-[28px] rounded-b-none sm:max-h-[90vh] sm:rounded-[30px]',
+          'max-w-[calc(100vw-1.5rem)] max-h-[82dvh] rounded-[26px] sm:max-h-[88vh] sm:rounded-[30px]',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
           sizeClass[size]
         )}
@@ -64,9 +64,9 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
         tabIndex={-1}
         ref={initialFocusRef}
       >
-        <div className="mx-auto mt-3 h-1.5 w-14 rounded-full bg-white/12 sm:hidden" />
-        <div className="flex items-center justify-between gap-4 border-b border-white/8 px-4 py-3 sm:px-6 sm:py-4">
-          <h2 className="text-base font-semibold text-white sm:text-lg">{title}</h2>
+        <div className="mx-auto mt-2 h-1 w-12 rounded-full bg-white/12 sm:hidden" />
+        <div className="flex items-center justify-between gap-4 border-b border-white/8 px-4 py-2.5 sm:px-6 sm:py-4">
+          <h2 className="text-[15px] font-semibold text-white sm:text-lg">{title}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -76,11 +76,11 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
             ×
           </button>
         </div>
-        <div className="max-h-[calc(88dvh-7.75rem)] overflow-y-auto px-4 py-4 text-sm text-slate-200 sm:max-h-[calc(90vh-9rem)] sm:px-6 sm:py-5">
+        <div className="max-h-[calc(82dvh-7rem)] overflow-y-auto px-4 py-3 text-sm text-slate-200 sm:max-h-[calc(88vh-8.5rem)] sm:px-6 sm:py-5">
           {children}
         </div>
         {footer ? (
-          <div className="border-t border-white/8 bg-slate-950/96 px-4 py-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:px-6 sm:py-4 sm:pb-4">
+          <div className="border-t border-white/8 bg-slate-950/96 px-4 py-2.5 pb-[max(0.85rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:px-6 sm:py-4 sm:pb-4">
             {footer}
           </div>
         ) : null}

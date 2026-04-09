@@ -44,7 +44,7 @@ export function shouldOpenWelcomeGate(params: {
   }
 
   if ((params.sessionCount ?? 1) === 0) {
-    return params.supabaseReady && params.authBootstrapComplete;
+    return params.supabaseReady && params.authBootstrapComplete && !params.welcomePromptState;
   }
 
   return (
