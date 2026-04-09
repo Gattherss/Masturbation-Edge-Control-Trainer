@@ -150,7 +150,8 @@ export function useTrainingMachine({ plan }: MachineOptions): MachineResult {
   const [elapsedMs, setElapsedMs] = useState(() => computeElapsedMs(reviveDraft(plan, draft)));
   const [restCountdown, setRestCountdown] = useState<number | null>(null);
   const [pendingFinalize, setPendingFinalize] = useState<FinalizeHandle | null>(null);
-  const rafRef = useRef<number | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const elapsedBucket = Math.floor(elapsedMs / 1000);
   const currentPhaseElapsedMs =
     state.isRunning && !state.isPaused ? Math.max(0, elapsedMs - state.accumulatedMs) : 0;
 
@@ -162,41 +163,46 @@ export function useTrainingMachine({ plan }: MachineOptions): MachineResult {
     }));
   }, [plan]);
 
-  const tick = useCallback(() => {
-    setElapsedMs((prev) => {
-      const next = computeElapsedMs(state);
-      return Math.abs(prev - next) > 10 ? next : prev;
-    });
-
-    if (state.phase === 'rest' && state.isRunning && !state.isPaused && state.currentSegmentStart) {
-      const elapsedSec = (Date.now() - state.currentSegmentStart) / 1000;
-      const remaining = Math.max(0, Math.round(state.restSuggestedSec - elapsedSec));
-      setRestCountdown(remaining);
-    } else {
-      setRestCountdown(null);
-    }
-
-    rafRef.current = requestAnimationFrame(tick);
-  }, [state]);
-
   useEffect(() => {
     if (state.isRunning && !state.isPaused) {
-      rafRef.current = requestAnimationFrame(tick);
+      const tick = () => {
+        const nextElapsedMs = computeElapsedMs(state);
+        setElapsedMs(nextElapsedMs);
+        if (state.phase === 'rest' && state.currentSegmentStart) {
+          const remainingMs =
+            state.restSuggestedSec * 1000 - (Date.now() - state.currentSegmentStart);
+          setRestCountdown(Math.max(0, Math.ceil(remainingMs / 1000)));
+        } else {
+          setRestCountdown(null);
+        }
+
+        animationFrameRef.current = window.requestAnimationFrame(tick);
+      };
+
+      tick();
+
       return () => {
-        if (rafRef.current !== null) {
-          cancelAnimationFrame(rafRef.current);
-          rafRef.current = null;
+        if (animationFrameRef.current !== null) {
+          window.cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
         }
       };
     }
 
     setElapsedMs(computeElapsedMs(state));
     setRestCountdown(null);
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
+    if (animationFrameRef.current !== null) {
+      window.cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
-  }, [state.isRunning, state.isPaused, state.phase, state.currentSegmentStart, tick, state]);
+  }, [
+    state,
+    state.isRunning,
+    state.isPaused,
+    state.phase,
+    state.currentSegmentStart,
+    state.restSuggestedSec
+  ]);
 
   useEffect(() => {
     const draftState = toDraft(state, elapsedMs);
@@ -205,7 +211,7 @@ export function useTrainingMachine({ plan }: MachineOptions): MachineResult {
     } else {
       saveDraft(draftState);
     }
-  }, [state, elapsedMs, pendingFinalize]);
+  }, [state, elapsedBucket, pendingFinalize]);
 
   const finalizeCurrentSegment = useCallback(
     (targetState: MachineState, timestamp: number): MachineState => {

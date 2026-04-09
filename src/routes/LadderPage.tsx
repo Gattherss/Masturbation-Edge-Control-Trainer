@@ -33,8 +33,8 @@ export default function LadderPage({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-[11px] uppercase tracking-[0.36em] text-slate-500">Season Ladder</p>
-            <h1 className="mt-3 text-3xl font-semibold text-white drop-shadow-md">真实天梯与公开资料</h1>
-            <p className="mt-2 text-sm text-slate-400">基于 Master 模型进行数据转换，自动同步分段</p>
+            <h1 className="mt-3 text-3xl font-semibold text-white drop-shadow-md">Ladder & Public Profile</h1>
+            <p className="mt-2 text-sm text-slate-400">真实天梯与公开资料</p>
           </div>
           <div className="rounded-[24px] border border-white/10 bg-black/25 px-4 py-3 text-right text-sm text-slate-300">
             <div className="text-xs uppercase tracking-[0.28em] text-slate-500">{season.name}</div>

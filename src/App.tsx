@@ -1,14 +1,12 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
-import { TrainingView } from '@/features/training/TrainingView';
-import { useTrainingMachine } from '@/features/training/useTrainingMachine';
+import { TrainingWorkspace } from '@/features/training/TrainingWorkspace';
 import { getPlan, loadCustomPlan, saveCustomPlan } from '@/lib/plans';
 import { loadSettings, saveSettings } from '@/lib/settings';
-import { Modal } from '@/components/Modal';
 import SessionsDetailsTable from '@/components/SessionsDetailsTable';
-import { formatDuration, todayKey } from '@/lib/time';
+import { todayKey } from '@/lib/time';
 import { listSessions } from '@/data/repositories/sessionRepo';
 import { compareToBaseline } from '@/lib/baseline';
-import { evaluateBadges, getFeaturedBadge, getNextBadgeCandidates } from '@/lib/badges';
+import { evaluateBadges, getFeaturedBadge, getNextBadgeCandidates, normalizeMedalUnlocks } from '@/lib/badges';
 import { loadBadges, loadBaseline } from '@/lib/storage';
 import { buildMasterySnapshot } from '@/lib/mastery';
 import { buildLeaderboard, buildLadderRating, getCurrentSeason } from '@/lib/ladder';
@@ -17,7 +15,9 @@ import { getSyncState, persistSyncState } from '@/lib/sync';
 import { getSupabaseEnv } from '@/lib/supabase';
 import { MedalCard } from '@/components/MedalCard';
 import type { Badge, Baseline, LeaderboardEntry, PublicProfile, Session, Settings as AppSettings, SyncState } from '@/types/models';
+import type { FinalizeResult } from '@/services/scoringPipeline';
 import {
+  describeSupabaseError,
   fetchLeaderboard,
   listenToSupabaseAuth,
   requestMagicLink,
@@ -34,16 +34,10 @@ const SettingsPage = lazy(() => import('@/routes/SettingsPage'));
 type ViewTab = 'training' | 'review' | 'medals' | 'ladder' | 'settings';
 type RemoteLeaderboardStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
 
-interface NoteForm {
-  note: string;
-  perceivedArousal: number | null;
-  stopReason: string;
-}
-
 function mergeUnlockedMedals(existing: Badge[], generated: Badge[]): Badge[] {
   const map = new Map<string, Badge>();
 
-  existing.forEach((medal) => {
+  normalizeMedalUnlocks(existing).forEach((medal) => {
     map.set(medal.code, medal);
   });
 
@@ -57,7 +51,7 @@ function mergeUnlockedMedals(existing: Badge[], generated: Badge[]): Badge[] {
     );
   });
 
-  return Array.from(map.values()).sort((a, b) => Date.parse(b.unlockedAt) - Date.parse(a.unlockedAt));
+  return normalizeMedalUnlocks(Array.from(map.values()));
 }
 
 const NAV_ITEMS: Array<{ key: ViewTab; label: string; short: string }> = [
@@ -70,11 +64,26 @@ const NAV_ITEMS: Array<{ key: ViewTab; label: string; short: string }> = [
 
 function SummaryChip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] border border-white/10 bg-white/[0.04] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transform-gpu">
-      <div className="text-[11px] uppercase tracking-[0.3em] text-slate-400 drop-shadow-md">{label}</div>
-      <div className="mt-2 text-lg font-semibold text-white">{value}</div>
+    <div className="rounded-[24px] border border-white/10 bg-white/[0.04] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md">
+      <div className="text-[13px] uppercase tracking-[0.3em] text-slate-400 drop-shadow-md xl:text-sm">{label}</div>
+      <div className="mt-2 text-2xl font-semibold text-white xl:text-3xl">{value}</div>
     </div>
   );
+}
+
+function getEnglishTabLabel(key: ViewTab) {
+  switch (key) {
+    case 'training':
+      return { label: 'Training', short: 'TR' };
+    case 'review':
+      return { label: 'Review', short: 'RV' };
+    case 'medals':
+      return { label: 'Medals', short: 'MD' };
+    case 'ladder':
+      return { label: 'Ladder', short: 'LD' };
+    case 'settings':
+      return { label: 'Settings', short: 'ST' };
+  }
 }
 
 export default function App() {
@@ -83,15 +92,13 @@ export default function App() {
   const [sessions, setSessions] = useState<Session[]>(() => listSessions());
   const [baseline, setBaseline] = useState<Baseline | null>(() => loadBaseline());
   const [medals, setMedals] = useState<Badge[]>(() =>
-    mergeUnlockedMedals(loadBadges() as Badge[], evaluateBadges(listSessions()))
+    mergeUnlockedMedals(loadBadges(), evaluateBadges(listSessions()))
   );
   const [profile, setProfile] = useState<PublicProfile>(() => loadProfile());
   const [syncState, setSyncState] = useState<SyncState>(() => getSyncState());
   const [narrative, setNarrative] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [toast, setToast] = useState<string | null>(null);
-  const [noteModalOpen, setNoteModalOpen] = useState(false);
-  const [noteForm, setNoteForm] = useState<NoteForm>({ note: '', perceivedArousal: null, stopReason: '' });
   const [view, setView] = useState<ViewTab>('training');
   const [remoteLeaderboard, setRemoteLeaderboard] = useState<LeaderboardEntry[] | null>(null);
   const [remoteLeaderboardStatus, setRemoteLeaderboardStatus] = useState<RemoteLeaderboardStatus>('idle');
@@ -101,7 +108,6 @@ export default function App() {
     () => (settings.mode === 'custom' ? customPlan : getPlan(settings.mode)),
     [settings.mode, customPlan]
   );
-  const machine = useTrainingMachine({ plan });
 
   const baselineComparison = useMemo(
     () => (baseline && sessions.length ? compareToBaseline(baseline, sessions[sessions.length - 1]) : null),
@@ -157,7 +163,7 @@ export default function App() {
     } catch (error) {
       setRemoteLeaderboard(null);
       setRemoteLeaderboardStatus('error');
-      setRemoteLeaderboardError(error instanceof Error ? error.message : '公开榜单读取失败');
+      setRemoteLeaderboardError(describeSupabaseError(error));
     }
   }, [supabaseReady]);
 
@@ -166,6 +172,18 @@ export default function App() {
     const id = window.setTimeout(() => setToast(null), 3000);
     return () => window.clearTimeout(id);
   }, [toast]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.documentElement.dataset.reduceMotion = settings.reduceMotion ? 'true' : 'false';
+
+    return () => {
+      delete document.documentElement.dataset.reduceMotion;
+    };
+  }, [settings.reduceMotion]);
 
   useEffect(() => {
     persistSyncState(syncState);
@@ -208,7 +226,7 @@ export default function App() {
           ...prev,
           provider: 'local',
           status: 'error',
-          lastError: error instanceof Error ? error.message : 'Supabase 会话恢复失败'
+          lastError: describeSupabaseError(error)
         }));
       });
 
@@ -224,22 +242,10 @@ export default function App() {
     void refreshRemoteLeaderboard();
   }, [refreshRemoteLeaderboard, syncState.userId]);
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (view !== 'training') return;
-      if (event.key === ' ' || event.key === 'Enter') {
-        event.preventDefault();
-        machine.switchPhase();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [machine, view]);
-
   const refreshAppState = useCallback(() => {
     const nextSessions = listSessions();
     const nextBaseline = loadBaseline();
-    const mergedMedals = mergeUnlockedMedals(loadBadges() as Badge[], evaluateBadges(nextSessions));
+    const mergedMedals = mergeUnlockedMedals(loadBadges(), evaluateBadges(nextSessions));
 
     setSessions(nextSessions);
     setBaseline(nextBaseline);
@@ -288,13 +294,14 @@ export default function App() {
       });
       setToast('Magic Link 已发送，请去邮箱完成登录。');
     } catch (error) {
+      const message = describeSupabaseError(error);
       handleSyncStateChange({
         ...syncState,
         provider: 'supabase',
         status: 'error',
-        lastError: error instanceof Error ? error.message : 'Magic Link 发送失败'
+        lastError: message
       });
-      setToast(error instanceof Error ? error.message : 'Magic Link 发送失败');
+      setToast(message);
     }
   }, [handleSyncStateChange, syncState]);
 
@@ -327,13 +334,14 @@ export default function App() {
       void refreshRemoteLeaderboard();
       setToast(`已同步 ${result.syncedSessions} 条记录和 ${result.syncedMedals} 枚勋章。`);
     } catch (error) {
+      const message = describeSupabaseError(error);
       handleSyncStateChange({
         ...syncState,
         provider: 'supabase',
         status: 'error',
-        lastError: error instanceof Error ? error.message : '同步失败'
+        lastError: message
       });
-      setToast(error instanceof Error ? error.message : '同步失败');
+      setToast(message);
     }
   }, [currentSeason, handleSyncStateChange, ladderRating, medals, profile, refreshRemoteLeaderboard, sessions, syncState]);
 
@@ -350,31 +358,17 @@ export default function App() {
       void refreshRemoteLeaderboard();
       setToast('已退出 Supabase，会继续保留本地数据。');
     } catch (error) {
+      const message = describeSupabaseError(error);
       handleSyncStateChange({
         ...syncState,
         status: 'error',
-        lastError: error instanceof Error ? error.message : '退出 Supabase 失败'
+        lastError: message
       });
-      setToast(error instanceof Error ? error.message : '退出 Supabase 失败');
+      setToast(message);
     }
   }, [handleSyncStateChange, refreshRemoteLeaderboard, syncState]);
 
-  const openFinalizeModal = () => {
-    const handle = machine.requestFinalize();
-    if (!handle) {
-      setToast('当前没有可保存的训练数据');
-      return;
-    }
-    setNoteModalOpen(true);
-  };
-
-  const finalizeSession = (payload: NoteForm) => {
-    try {
-      const normalizedPayload = settings.collectArousalOnFinish
-        ? payload
-        : { ...payload, perceivedArousal: null };
-      const result = machine.finalize(normalizedPayload);
-
+  const handleTrainingSaved = useCallback((result: FinalizeResult) => {
       const mergedMedals = mergeUnlockedMedals(medals, evaluateBadges(result.sessions));
       const existingCodes = new Set(medals.map((medal) => medal.code));
       const newMedals = mergedMedals.filter((medal) => !existingCodes.has(medal.code));
@@ -384,8 +378,6 @@ export default function App() {
       setMedals(mergedMedals);
       setNarrative(result.narrative);
       setSuggestions(result.suggestions);
-      setNoteModalOpen(false);
-      setNoteForm({ note: '', perceivedArousal: null, stopReason: '' });
 
       if (newMedals.length > 0) {
         const names = newMedals.slice(0, 2).map((medal) => medal.name).join('、');
@@ -395,16 +387,14 @@ export default function App() {
       } else {
         setToast(result.baselineMessage ?? '已保存训练记录');
       }
-    } catch (error) {
-      setToast(error instanceof Error ? error.message : '保存失败');
-      machine.cancelFinalize();
-    }
-  };
+    },
+    [medals]
+  );
 
   const trainingCompanion = (
     <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
       <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.5)] backdrop-blur-3xl">
-        <h2 className="text-2xl font-semibold text-white drop-shadow-md">当赛季表现 (S{currentSeason.name})</h2>
+        <h2 className="text-3xl font-semibold text-white drop-shadow-md xl:text-4xl">Season Snapshot / 当赛季表现 (S{currentSeason.name})</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <SummaryChip label="Mastery" value={String(Math.round(snapshot.masteryScore))} />
           <SummaryChip label="Ladder" value={`${ladderRating.tier} ${ladderRating.division}`} />
@@ -458,12 +448,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-transparent text-slate-100">
-      <div className="mx-auto max-w-7xl px-4 pb-28 pt-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] px-4 pb-28 pt-4 sm:px-6 xl:px-10 2xl:px-12">
         <header className="rounded-[36px] border border-white/10 bg-white/[0.05] p-5 shadow-[0_30px_110px_rgba(0,0,0,0.34)] backdrop-blur-xl">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.36em] text-sky-400 drop-shadow-md">Edging Trainer V2</p>
-              <h1 className="mt-3 text-4xl font-bold tracking-wide text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]">边缘控制训练</h1>
+              <p className="text-[11px] uppercase tracking-[0.36em] text-sky-400 drop-shadow-md">寸止边缘训练器 / Edge Control Trainer</p>
+              <h1 className="mt-3 text-5xl font-bold tracking-wide text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.15)] xl:text-6xl">Edge Control Trainer</h1>
+              <p className="mt-3 text-lg text-slate-300 xl:text-xl">寸止边缘训练器</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <SummaryChip label="Season" value={currentSeason.name} />
@@ -478,21 +469,29 @@ export default function App() {
                 key={item.key}
                 type="button"
                 className={
-                  'rounded-full px-4 py-2 text-sm transition ' +
+                  'rounded-full px-4 py-2.5 text-base transition ' +
                   (view === item.key
                     ? 'bg-white text-slate-950'
                     : 'border border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]')
                 }
                 onClick={() => setView(item.key)}
               >
-                {item.label}
+                <span className="font-semibold">{getEnglishTabLabel(item.key).label}</span>
+                <span className="ml-2 text-sm text-slate-500">{item.label}</span>
               </button>
             ))}
           </nav>
         </header>
 
         <main className="mt-6 space-y-6">
-          {view === 'training' ? <TrainingView machine={machine} onFinish={openFinalizeModal} restBeepEnabled={settings.restBeep} /> : null}
+          {view === 'training' ? (
+            <TrainingWorkspace
+              plan={plan}
+              settings={settings}
+              onSaved={handleTrainingSaved}
+              onToast={(message) => setToast(message)}
+            />
+          ) : null}
           {view === 'training' ? trainingCompanion : null}
 
           <Suspense
@@ -573,83 +572,11 @@ export default function App() {
             }
             onClick={() => setView(item.key)}
           >
-            <span className="text-sm font-semibold">{item.short}</span>
-            <span>{item.label}</span>
+            <span className="text-sm font-semibold">{getEnglishTabLabel(item.key).short}</span>
+            <span>{getEnglishTabLabel(item.key).label}</span>
           </button>
         ))}
       </nav>
-
-      <Modal
-        open={noteModalOpen}
-        onClose={() => {
-          setNoteModalOpen(false);
-          machine.cancelFinalize();
-        }}
-        title="记录训练"
-        size="md"
-        footer={
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200"
-              onClick={() => finalizeSession({ note: '', perceivedArousal: null, stopReason: '' })}
-            >
-              跳过
-            </button>
-            <button
-              type="button"
-              className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950"
-              onClick={() => finalizeSession(noteForm)}
-            >
-              提交并保存
-            </button>
-          </div>
-        }
-      >
-        <div className="space-y-4">
-          <label className="block text-sm">
-            <span className="text-slate-300">训练备注</span>
-            <textarea
-              className="mt-2 w-full rounded-[20px] border border-white/10 bg-black/30 px-4 py-3 text-sm text-slate-200"
-              value={noteForm.note}
-              onChange={(event) => setNoteForm((prev) => ({ ...prev, note: event.target.value }))}
-            />
-          </label>
-          {settings.collectArousalOnFinish ? (
-            <label className="block text-sm">
-              <span className="text-slate-300">主观强度（1-10）</span>
-              <input
-                type="number"
-                min={1}
-                max={10}
-                value={noteForm.perceivedArousal ?? ''}
-                onChange={(event) =>
-                  setNoteForm((prev) => ({
-                    ...prev,
-                    perceivedArousal: event.target.value ? Number(event.target.value) : null
-                  }))
-                }
-                className="mt-2 w-full rounded-[20px] border border-white/10 bg-black/30 px-4 py-3 text-sm text-slate-200"
-              />
-            </label>
-          ) : null}
-          <label className="block text-sm">
-            <span className="text-slate-300">停止原因</span>
-            <select
-              className="mt-2 w-full rounded-[20px] border border-white/10 bg-black/30 px-4 py-3 text-sm text-slate-200"
-              value={noteForm.stopReason}
-              onChange={(event) => setNoteForm((prev) => ({ ...prev, stopReason: event.target.value }))}
-            >
-              <option value="">未选择</option>
-              {['自然结束', '达到目标', '疲劳', '无聊', '射精', '其他'].map((reason) => (
-                <option key={reason} value={reason}>
-                  {reason}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </Modal>
 
       {toast ? (
         <div className="fixed left-1/2 top-4 z-[70] -translate-x-1/2 rounded-full border border-white/10 bg-slate-950/92 px-4 py-2 text-sm text-slate-200 shadow-[0_18px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl">

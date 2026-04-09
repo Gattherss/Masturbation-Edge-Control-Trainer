@@ -33,6 +33,35 @@ interface RemoteLeaderboardRow {
   updated_at: string;
 }
 
+export function describeSupabaseError(error: unknown) {
+  if (typeof error === 'object' && error !== null) {
+    const candidate = error as {
+      code?: string;
+      message?: string;
+      details?: string | null;
+      hint?: string | null;
+    };
+
+    if (candidate.code === 'PGRST205' || candidate.code === '42P01') {
+      return 'Supabase schema is not initialized yet. Run supabase/migrations/20260408_v2_bootstrap.sql in the Supabase SQL Editor.';
+    }
+
+    if (candidate.code === '42501') {
+      return 'Supabase permissions are blocking this request. Check the RLS policies for the target table or view.';
+    }
+
+    if (candidate.message === 'Auth session missing!') {
+      return 'Supabase session is missing. Sign in with Magic Link before syncing.';
+    }
+
+    if (candidate.message) {
+      return candidate.message;
+    }
+  }
+
+  return 'Supabase request failed.';
+}
+
 function requireClient() {
   const client = getSupabaseClient();
   if (!client) {

@@ -1,5 +1,5 @@
 import type { MedalUnlock, Session } from '@/types/models';
-import { getAllBadgeDefs, getMedalFamilies, getNextBadgeCandidates } from '@/lib/badges';
+import { getAllBadgeDefs, getMedalFamilies, getNextBadgeCandidates, normalizeMedalUnlocks } from '@/lib/badges';
 import { MedalCard } from '@/components/MedalCard';
 
 interface MedalsPageProps {
@@ -8,14 +8,16 @@ interface MedalsPageProps {
 }
 
 export default function MedalsPage({ sessions, medals }: MedalsPageProps) {
-  const unlockedCodes = new Set(medals.map((medal) => medal.code));
+  const safeMedals = normalizeMedalUnlocks(medals);
+  const unlockedCodes = new Set(safeMedals.map((medal) => medal.code));
   const upcoming = getNextBadgeCandidates(sessions, 4);
 
   return (
     <div className="space-y-6">
       <section className="rounded-[32px] border border-white/10 bg-white/[0.05] p-5 shadow-[0_30px_100px_rgba(0,0,0,0.32)] backdrop-blur-xl">
         <p className="text-[11px] uppercase tracking-[0.36em] text-slate-500">Metal Archive</p>
-        <h1 className="mt-3 text-3xl font-semibold text-white">勋章陈列墙</h1>
+        <h1 className="mt-3 text-3xl font-semibold text-white">Metal Medal Gallery</h1>
+        <p className="mt-2 text-sm text-slate-400">勋章陈列墙</p>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
           每个家族都有四个材质层级，形状、纹章和铭带文字一起变化。这里不是“完成过什么”的流水账，而是你已经把哪些能力真正锻造成形。
         </p>
@@ -38,7 +40,7 @@ export default function MedalsPage({ sessions, medals }: MedalsPageProps) {
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {defs.map((def) => {
-                const unlocked = medals.find((medal) => medal.code === def.code);
+                const unlocked = safeMedals.find((medal) => medal.code === def.code);
                 const upcomingItem = upcoming.find((item) => item.def.code === def.code);
                 return (
                   <MedalCard
@@ -57,4 +59,3 @@ export default function MedalsPage({ sessions, medals }: MedalsPageProps) {
     </div>
   );
 }
-

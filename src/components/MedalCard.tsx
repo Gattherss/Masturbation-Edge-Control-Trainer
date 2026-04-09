@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import { Modal } from '@/components/Modal';
@@ -83,13 +83,13 @@ function familyGlyph(family: MedalCatalogItem['family']) {
   }
 }
 
-function tierFrame(tier: MedalCatalogItem['tier']) {
+function tierFrame(tier: MedalCatalogItem['tier'], fillId: string) {
   switch (tier) {
     case 'black_iron':
       return (
         <polygon
           points="60,8 106,36 106,86 60,112 14,86 14,36"
-          fill="url(#metal-fill)"
+          fill={`url(#${fillId})`}
           stroke="rgba(255,255,255,0.35)"
           strokeWidth="4"
         />
@@ -99,7 +99,7 @@ function tierFrame(tier: MedalCatalogItem['tier']) {
         <>
           <polygon
             points="60,8 96,20 112,54 96,96 60,112 24,96 8,54 24,20"
-            fill="url(#metal-fill)"
+            fill={`url(#${fillId})`}
             stroke="rgba(255,255,255,0.45)"
             strokeWidth="4"
           />
@@ -117,7 +117,7 @@ function tierFrame(tier: MedalCatalogItem['tier']) {
     case 'steel':
       return (
         <>
-          <circle cx="60" cy="56" r="46" fill="url(#metal-fill)" stroke="rgba(255,255,255,0.5)" strokeWidth="4" />
+          <circle cx="60" cy="56" r="46" fill={`url(#${fillId})`} stroke="rgba(255,255,255,0.5)" strokeWidth="4" />
           <path d="M21 68c7 17 20 28 39 33 19-5 32-16 39-33" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="5" strokeLinecap="round" />
         </>
       );
@@ -126,7 +126,7 @@ function tierFrame(tier: MedalCatalogItem['tier']) {
         <>
           <path
             d="M60 6 104 26 96 92 60 118 24 92 16 26Z"
-            fill="url(#metal-fill)"
+            fill={`url(#${fillId})`}
             stroke="rgba(255,255,255,0.4)"
             strokeWidth="4"
           />
@@ -143,18 +143,25 @@ function tierFrame(tier: MedalCatalogItem['tier']) {
 
 export function MedalCard({ medal, unlocked, progressPercent = 0, hint, compact = false }: MedalCardProps) {
   const [modalOpen, setModalOpen] = useState(false);
-  const fillClass = TIER_CLASSES[medal.tier];
-  const tierLabel = TIER_LABELS[medal.tier];
+  const gradientBaseId = useId().replace(/:/g, '-');
+  const cardFillId = `${gradientBaseId}-card-fill`;
+  const modalFillId = `${gradientBaseId}-modal-fill`;
+  const reduceMotion =
+    typeof document !== 'undefined' && document.documentElement.dataset.reduceMotion === 'true';
+  const tier = medal.tier in TIER_CLASSES ? medal.tier : 'black_iron';
+  const family = medal.family in FAMILY_LABELS ? medal.family : 'rhythm';
+  const fillClass = TIER_CLASSES[tier];
+  const tierLabel = TIER_LABELS[tier];
+  const familyLabel = FAMILY_LABELS[family];
 
   return (
     <>
     <motion.article
-      layout
-      initial={{ opacity: 0, y: 8 }}
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.22 }}
+      whileHover={reduceMotion ? undefined : { y: -3, scale: 1.01 }}
+      whileTap={reduceMotion ? undefined : { scale: 0.98 }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.18 }}
       onClick={() => setModalOpen(true)}
       className={clsx(
         'relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04] p-4 shadow-[0_22px_60px_rgba(0,0,0,0.4)] backdrop-blur-3xl',
@@ -165,7 +172,7 @@ export function MedalCard({ medal, unlocked, progressPercent = 0, hint, compact 
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%),linear-gradient(180deg,rgba(255,255,255,0.07),transparent_42%,rgba(0,0,0,0.18))]" />
       <div className="relative flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.35em] text-slate-400">{FAMILY_LABELS[medal.family]}</p>
+          <p className="text-[11px] uppercase tracking-[0.35em] text-slate-400">{familyLabel}</p>
           <h3 className="mt-2 text-lg font-semibold text-white">{medal.name}</h3>
           <p className="mt-1 text-xs text-slate-400">{medal.desc}</p>
         </div>
@@ -178,14 +185,14 @@ export function MedalCard({ medal, unlocked, progressPercent = 0, hint, compact 
         <div className={clsx('relative flex h-36 w-32 items-center justify-center rounded-[32px] bg-gradient-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_16px_40px_rgba(0,0,0,0.35)]', fillClass)}>
           <svg viewBox="0 0 120 140" className={clsx('h-32 w-28 drop-shadow-[0_12px_20px_rgba(0,0,0,0.35)]', unlocked ? 'opacity-100' : 'opacity-35')}>
             <defs>
-              <linearGradient id="metal-fill" x1="0%" x2="100%" y1="0%" y2="100%">
+              <linearGradient id={cardFillId} x1="0%" x2="100%" y1="0%" y2="100%">
                 <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
                 <stop offset="48%" stopColor="rgba(255,255,255,0.35)" />
                 <stop offset="100%" stopColor="rgba(0,0,0,0.3)" />
               </linearGradient>
             </defs>
-            {tierFrame(medal.tier)}
-            <g className="text-black/80">{familyGlyph(medal.family)}</g>
+            {tierFrame(tier, cardFillId)}
+            <g className="text-black/80">{familyGlyph(family)}</g>
             <path d="M26 112h68l-10 18H36z" fill="rgba(15,23,42,0.85)" />
             <text x="60" y="125" fill="white" textAnchor="middle" fontSize="10" fontWeight="700" letterSpacing="2">
               {tierLabel}
@@ -219,23 +226,29 @@ export function MedalCard({ medal, unlocked, progressPercent = 0, hint, compact 
     <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="勋章详情" size="sm">
       <div className="flex flex-col items-center pb-6 pt-4 text-center">
         <div className={clsx('relative flex h-48 w-44 items-center justify-center rounded-[40px] bg-gradient-to-br shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_20px_50px_rgba(0,0,0,0.5)]', fillClass)}>
-          <svg viewBox="0 0 120 140" className={clsx('h-40 w-36 drop-shadow-[0_16px_24px_rgba(0,0,0,0.5)] animate-spin-slow', unlocked ? 'opacity-100' : 'opacity-35 grayscale')}>
+          <svg
+            viewBox="0 0 120 140"
+            className={clsx(
+              'h-40 w-36 drop-shadow-[0_16px_24px_rgba(0,0,0,0.5)]',
+              !reduceMotion && 'animate-spin-slow',
+              unlocked ? 'opacity-100' : 'opacity-35 grayscale'
+            )}
+          >
             <defs>
-              <linearGradient id="metal-fill-modal" x1="0%" x2="100%" y1="0%" y2="100%">
+              <linearGradient id={modalFillId} x1="0%" x2="100%" y1="0%" y2="100%">
                 <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
                 <stop offset="48%" stopColor="rgba(255,255,255,0.35)" />
                 <stop offset="100%" stopColor="rgba(0,0,0,0.3)" />
               </linearGradient>
             </defs>
-            {/* The SVG structure reused */}
-            {tierFrame(medal.tier)}
-            <g className="text-black/80">{familyGlyph(medal.family)}</g>
+            {tierFrame(tier, modalFillId)}
+            <g className="text-black/80">{familyGlyph(family)}</g>
           </svg>
         </div>
 
         <h3 className="mt-8 text-2xl font-bold text-white drop-shadow-md">{medal.name}</h3>
         <span className={clsx('mt-3 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-inner', `bg-gradient-to-br ${fillClass}`)}>
-          {tierLabel} · {FAMILY_LABELS[medal.family]}
+          {tierLabel} · {familyLabel}
         </span>
 
         <p className="mt-6 text-sm italic text-slate-300">"{medal.motto}"</p>
@@ -271,4 +284,3 @@ export function MedalCard({ medal, unlocked, progressPercent = 0, hint, compact 
     </>
   );
 }
-

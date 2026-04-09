@@ -12,52 +12,52 @@ interface TrainingViewProps {
 }
 
 export function TrainingView({ machine, onFinish, restBeepEnabled }: TrainingViewProps) {
-  const { state, elapsedMs, restCountdown, pendingFinalize } = machine;
+  const { state, elapsedMs, currentPhaseElapsedMs, restCountdown, pendingFinalize } = machine;
 
   const { plan, isRunning, isPaused, phase, segments, edges, usedPorn, ejaculated } = state;
 
   const statusLabel = (() => {
     if (pendingFinalize) {
-      return '待保存';
+      return 'Ready to save / 可保存';
     }
     if (isRunning) {
-      return phase === 'stim' ? '刺激阶段' : '休息阶段';
+      return phase === 'stim' ? 'Stim phase / 刺激段' : 'Rest phase / 休息段';
     }
     if (isPaused) {
-      return '已暂停';
+      return 'Paused / 已暂停';
     }
     if (segments.length > 0) {
-      return '可结束记录';
+      return 'Ready to finish / 可结束';
     }
-    return '待机';
+    return 'Idle / 待机';
   })();
 
   const stimWindowLabel = `${plan.targetStim[0]}s ~ ${plan.targetStim[1]}s`;
   const restWindowLabel = `${plan.targetRest[0]}s ~ ${plan.targetRest[1]}s`;
-  const phaseButtonLabel = phase === 'stim' ? '进入休息' : '进入刺激';
+  const phaseButtonLabel = phase === 'stim' ? 'Switch to Rest / 切到休息' : 'Switch to Stim / 切到刺激';
 
   return (
-    <section className="relative overflow-hidden rounded-[34px] border border-white/10 bg-slate-900/40 p-5 shadow-[0_30px_100px_rgba(0,0,0,0.5)] backdrop-blur-3xl">
+    <section className="relative overflow-hidden rounded-[34px] border border-white/10 bg-slate-900/40 p-5 shadow-[0_30px_100px_rgba(0,0,0,0.5)] backdrop-blur-3xl xl:p-7">
       <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
       <div className="relative flex flex-col gap-6">
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <header className="relative overflow-hidden rounded-[30px] border border-white/5 bg-black/40 p-6 shadow-2xl">
+          <header className="relative overflow-hidden rounded-[30px] border border-white/5 bg-black/40 p-6 shadow-2xl xl:p-8">
             <div className="absolute top-0 right-0 h-64 w-64 -translate-y-1/2 translate-x-1/3 rounded-full bg-sky-500/10 blur-[80px] pointer-events-none" />
             <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.35em] text-slate-500">Training Core</p>
-              <p className="mt-3 text-6xl font-semibold text-white sm:text-7xl">{formatDuration(elapsedMs)}</p>
-              <p className="mt-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
+              <p className="text-[11px] uppercase tracking-[0.35em] text-slate-500">Training Core / 训练核心</p>
+              <p className="mt-3 text-7xl font-semibold leading-none text-white sm:text-8xl xl:text-[6.5rem]">{formatDuration(elapsedMs)}</p>
+              <p className="mt-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-medium text-slate-300">
                 {statusLabel}
               </p>
             </div>
-            <dl className="grid gap-2 text-right text-sm text-slate-400 sm:text-base">
+            <dl className="grid gap-2 text-right text-base text-slate-400 xl:text-lg">
               <div>
-                <dt className="inline text-slate-500">刺激窗口：</dt>
+                <dt className="inline text-slate-500">Stim target / 刺激目标: </dt>
                 <dd className="inline">{stimWindowLabel}</dd>
               </div>
               <div>
-                <dt className="inline text-slate-500">休息窗口：</dt>
+                <dt className="inline text-slate-500">Rest target / 休息目标: </dt>
                 <dd className="inline">{restWindowLabel}</dd>
               </div>
             </dl>
@@ -74,33 +74,33 @@ export function TrainingView({ machine, onFinish, restBeepEnabled }: TrainingVie
 
           <div className="grid gap-4">
             <div className="rounded-[30px] border border-white/5 bg-black/30 p-6 shadow-2xl transition hover:bg-black/40">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-sky-500/80">Pacing Guide</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-sky-500/80">Pacing Guide / 节律提示</p>
               <SuggestionTimer
                 plan={{ stim: plan.targetStim, rest: plan.targetRest }}
                 phase={phase}
                 running={isRunning && !isPaused}
-                currentSegmentStart={state.currentSegmentStart}
+                currentPhaseElapsedMs={currentPhaseElapsedMs}
                 restSuggestedSec={state.restSuggestedSec}
                 restCountdown={restCountdown}
                 restBeepEnabled={restBeepEnabled}
               />
-              <p className="mt-3 text-sm text-slate-400">寸止次数：<span className="font-semibold text-white">{edges}</span></p>
+              <p className="mt-3 text-base text-slate-400">Edges / 边数: <span className="font-semibold text-white">{edges}</span></p>
             </div>
 
             <div className="rounded-[30px] border border-white/5 bg-black/30 p-6 shadow-2xl transition hover:bg-black/40">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-sky-500/80">Session Flags</p>
-              <label className="mt-3 flex items-center gap-2 text-sm text-slate-300">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-sky-500/80">Session Flags / 本局标记</p>
+              <label className="mt-3 flex items-center gap-2 text-base text-slate-300">
                 <input
                   type="checkbox"
                   checked={usedPorn}
                   onChange={(event) => machine.toggleUsedPorn(event.target.checked)}
                 />
-                使用色情内容
+                Porn used / 使用成人视频
               </label>
-              <p className="mt-4 text-sm text-slate-400">
-                是否射精：{' '}
+              <p className="mt-4 text-base text-slate-400">
+                Ejaculated / 是否射精:{' '}
                 <span className={ejaculated ? 'text-rose-300' : 'text-slate-500'}>
-                  {ejaculated ? '是' : '否'}
+                  {ejaculated ? 'Yes / 是' : 'No / 否'}
                 </span>
               </p>
             </div>
@@ -108,64 +108,64 @@ export function TrainingView({ machine, onFinish, restBeepEnabled }: TrainingVie
         </div>
 
         <div className="rounded-[30px] border border-white/5 bg-black/30 p-6 shadow-2xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-sky-500/80">Main Controls</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-sky-500/80">Main Controls / 主控制区</p>
             <div className="mt-4 flex flex-wrap gap-3">
               {!isRunning && !isPaused && segments.length === 0 ? (
                 <button
                   type="button"
-                  className="rounded-full bg-gradient-to-r from-amber-200 via-slate-50 to-cyan-200 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:opacity-95"
+                  className="rounded-full bg-gradient-to-r from-amber-200 via-slate-50 to-cyan-200 px-6 py-3 text-base font-semibold text-slate-950 transition hover:opacity-95"
                   onClick={machine.start}
-                  aria-label="开始训练"
+                  aria-label="Start training"
                 >
-                  开始训练
+                  Start / 开始
                 </button>
               ) : null}
               {isRunning ? (
                 <>
                   <button
                     type="button"
-                    className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+                    className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-base font-medium text-slate-200 transition hover:bg-white/10"
                     onClick={machine.switchPhase}
-                    aria-label="切换刺激或休息阶段"
+                    aria-label="Switch phase"
                   >
                     {phaseButtonLabel}
                   </button>
                   <button
                     type="button"
-                    className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+                    className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-base font-medium text-slate-200 transition hover:bg-white/10"
                     onClick={machine.pause}
                   >
-                    暂停
+                    Pause / 暂停
                   </button>
                 </>
               ) : null}
               {isPaused ? (
                 <button
                   type="button"
-                  className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-300"
+                  className="rounded-full bg-emerald-400 px-5 py-3 text-base font-semibold text-emerald-950 transition hover:bg-emerald-300"
                   onClick={machine.resume}
                 >
-                  继续
+                  Resume / 继续
                 </button>
               ) : null}
               <button
                 type="button"
-                className="rounded-full bg-amber-400 px-5 py-3 text-sm font-semibold text-amber-950 transition hover:bg-amber-300"
+                className="rounded-full bg-amber-400 px-5 py-3 text-base font-semibold text-amber-950 transition hover:bg-amber-300"
                 onClick={onFinish}
               >
-                结束并记录
+                Finish & Save / 结束并保存
               </button>
               <button
                 type="button"
-                className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+                className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-base font-medium text-slate-200 transition hover:bg-white/10"
                 onClick={machine.reset}
               >
-                重置
+                Reset / 重置
               </button>
               <button
                 type="button"
                 className={clsx(
-                  'rounded-full px-5 py-3 text-sm font-semibold transition-colors',
+                  'rounded-full px-5 py-3 text-base font-semibold transition-colors',
                   ejaculated
                     ? 'bg-rose-500 text-rose-50 hover:bg-rose-400'
                     : 'bg-rose-500/25 text-rose-200 hover:bg-rose-500/35'
@@ -173,7 +173,7 @@ export function TrainingView({ machine, onFinish, restBeepEnabled }: TrainingVie
                 aria-pressed={ejaculated}
                 onClick={() => machine.toggleEjaculated(!ejaculated)}
               >
-                {ejaculated ? '已标记射精' : '本次射了'}
+                {ejaculated ? 'Climax marked / 已标记' : 'Mark climax / 标记射精'}
               </button>
             </div>
         </div>
@@ -186,7 +186,7 @@ function SuggestionTimer(props: {
   plan: { stim: [number, number]; rest: [number, number] };
   phase: 'stim' | 'rest';
   running: boolean;
-  currentSegmentStart: number | null;
+  currentPhaseElapsedMs: number;
   restSuggestedSec: number;
   restCountdown: number | null;
   restBeepEnabled: boolean;
@@ -195,18 +195,16 @@ function SuggestionTimer(props: {
     plan,
     phase,
     running,
-    currentSegmentStart,
+    currentPhaseElapsedMs,
     restSuggestedSec,
     restCountdown,
     restBeepEnabled
   } = props;
-  const now = Date.now();
-  const elapsedSec =
-    running && currentSegmentStart ? Math.floor((now - currentSegmentStart) / 1000) : 0;
+  const elapsedSec = running ? Math.floor(currentPhaseElapsedMs / 1000) : 0;
 
   const lastBucketRef = useRef<number>(-1);
   useEffect(() => {
-    if (phase !== 'rest' || !running || !currentSegmentStart) {
+    if (phase !== 'rest' || !running) {
       lastBucketRef.current = -1;
       return;
     }
@@ -217,28 +215,28 @@ function SuggestionTimer(props: {
       beep(120, 880 + bucket * 100, 'square');
       lastBucketRef.current = bucket;
     }
-  }, [phase, running, currentSegmentStart, elapsedSec, restSuggestedSec, restBeepEnabled]);
+  }, [phase, running, elapsedSec, restSuggestedSec, restBeepEnabled]);
 
   if (phase === 'rest') {
-    return <p className="mt-2 text-sm text-slate-400">建议倒计时：{restCountdown ?? '—'}</p>;
+    return <p className="mt-2 text-base text-slate-400">Suggested rest / 建议休息: {restCountdown ?? '—'}s</p>;
   }
 
   const [stimMin, stimMax] = plan.stim;
   if (elapsedSec < stimMin) {
     return (
-      <p className="mt-2 text-sm text-slate-400">
-        建议倒计时：{stimMin - elapsedSec}s 达到目标窗口
+      <p className="mt-2 text-base text-slate-400">
+        Reach target window / 距离目标窗口还有 {stimMin - elapsedSec}s
       </p>
     );
   }
   if (elapsedSec <= stimMax) {
     return (
-      <p className="mt-2 text-sm text-emerald-400">
-        已在目标窗口，{stimMax - elapsedSec}s 后建议进入休息
+      <p className="mt-2 text-base text-emerald-400">
+        In target window / 处于目标窗口，还可持续 {stimMax - elapsedSec}s
       </p>
     );
   }
   return (
-    <p className="mt-2 text-sm text-amber-400">已超出 {elapsedSec - stimMax}s（超出目标窗口）</p>
+    <p className="mt-2 text-base text-amber-400">Over target window / 已超出目标窗口 {elapsedSec - stimMax}s</p>
   );
 }

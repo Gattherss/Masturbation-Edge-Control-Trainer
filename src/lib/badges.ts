@@ -459,6 +459,12 @@ const MEDAL_DEFS: BadgeDef[] = [
   )
 ];
 
+const MEDAL_DEF_BY_CODE = new Map(MEDAL_DEFS.map((def) => [def.code, def] as const));
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 function toUnlock(def: BadgeDef, sourceSessionId?: string): MedalUnlock {
   return {
     ...def,
@@ -469,6 +475,47 @@ function toUnlock(def: BadgeDef, sourceSessionId?: string): MedalUnlock {
 
 export function getAllBadgeDefs(): BadgeDef[] {
   return MEDAL_DEFS;
+}
+
+export function getBadgeDef(code: string) {
+  return MEDAL_DEF_BY_CODE.get(code) ?? null;
+}
+
+export function normalizeMedalUnlocks(value: unknown): MedalUnlock[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const deduped = new Map<string, MedalUnlock>();
+
+  for (const item of value) {
+    if (!isRecord(item) || typeof item.code !== 'string') {
+      continue;
+    }
+
+    const def = getBadgeDef(item.code);
+    if (!def) {
+      continue;
+    }
+
+    const unlockedAt =
+      typeof item.unlockedAt === 'string' && Number.isFinite(Date.parse(item.unlockedAt))
+        ? item.unlockedAt
+        : new Date().toISOString();
+    const sourceSessionId = typeof item.sourceSessionId === 'string' ? item.sourceSessionId : undefined;
+    const normalized: MedalUnlock = {
+      ...def,
+      unlockedAt,
+      sourceSessionId
+    };
+    const previous = deduped.get(def.code);
+
+    if (!previous || Date.parse(normalized.unlockedAt) >= Date.parse(previous.unlockedAt)) {
+      deduped.set(def.code, normalized);
+    }
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => Date.parse(b.unlockedAt) - Date.parse(a.unlockedAt));
 }
 
 export function getBadgeProgress(code: string, sessions: Session[]) {
@@ -545,4 +592,3 @@ export function getMedalSummary(sessions: Session[]) {
     featured: getFeaturedBadge(unlocked)
   };
 }
-

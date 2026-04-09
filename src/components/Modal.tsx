@@ -50,12 +50,13 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/75 px-4 py-8 backdrop-blur-md"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/75 px-0 py-0 backdrop-blur-md sm:items-center sm:px-4 sm:py-8"
       onClick={onClose}
     >
       <div
         className={clsx(
-          'w-full overflow-hidden rounded-[30px] border border-white/10 bg-slate-950/92 shadow-[0_36px_100px_rgba(0,0,0,0.5)]',
+          'w-full overflow-hidden border border-white/10 bg-slate-950/92 shadow-[0_36px_100px_rgba(0,0,0,0.5)]',
+          'max-h-[92dvh] rounded-t-[30px] rounded-b-none sm:max-h-[90vh] sm:rounded-[30px]',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
           sizeClass[size]
         )}
@@ -63,7 +64,8 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
         tabIndex={-1}
         ref={initialFocusRef}
       >
-        <div className="flex items-center justify-between gap-4 border-b border-white/8 px-6 py-4">
+        <div className="mx-auto mt-3 h-1.5 w-14 rounded-full bg-white/12 sm:hidden" />
+        <div className="flex items-center justify-between gap-4 border-b border-white/8 px-5 py-4 sm:px-6">
           <h2 className="text-lg font-semibold text-white">{title}</h2>
           <button
             type="button"
@@ -74,8 +76,14 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
             ✕
           </button>
         </div>
-        <div className="px-6 py-5 text-sm text-slate-200">{children}</div>
-        {footer ? <div className="border-t border-white/8 px-6 py-4">{footer}</div> : null}
+        <div className="max-h-[calc(92dvh-8.5rem)] overflow-y-auto px-5 py-5 text-sm text-slate-200 sm:max-h-[calc(90vh-9rem)] sm:px-6">
+          {children}
+        </div>
+        {footer ? (
+          <div className="border-t border-white/8 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:pb-4">
+            {footer}
+          </div>
+        ) : null}
       </div>
     </div>,
     document.body

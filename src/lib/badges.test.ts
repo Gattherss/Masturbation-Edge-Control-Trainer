@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateBadges, getAllBadgeDefs, getBadgeProgress } from './badges';
+import { evaluateBadges, getAllBadgeDefs, getBadgeProgress, normalizeMedalUnlocks } from './badges';
 import { scoreSession } from './eval';
 import type { Plan, Session } from '@/types/models';
 
@@ -77,5 +77,20 @@ describe('medal catalog', () => {
 
     expect(unlocked).toContain('rhythm_black_iron');
     expect(progress.percent).toBeGreaterThan(0);
+  });
+
+  it('normalizes persisted medals against the live catalog before rendering', () => {
+    const normalized = normalizeMedalUnlocks([
+      null,
+      { code: 'unknown_medal', unlockedAt: '2026-04-01T00:00:00.000Z' },
+      { code: 'rhythm_black_iron', unlockedAt: 'bad-date', family: 'legacy' },
+      { code: 'rhythm_black_iron', unlockedAt: '2026-04-08T00:00:00.000Z' },
+      { code: 'control_black_iron', unlockedAt: '2026-04-07T00:00:00.000Z', sourceSessionId: 's-1' }
+    ]);
+
+    expect(normalized).toHaveLength(2);
+    expect(normalized[0].code).toBe('rhythm_black_iron');
+    expect(normalized[0].tier).toBe('black_iron');
+    expect(normalized[1].sourceSessionId).toBe('s-1');
   });
 });

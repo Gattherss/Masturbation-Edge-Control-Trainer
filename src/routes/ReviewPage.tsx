@@ -57,7 +57,8 @@ export default function ReviewPage({
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-[11px] uppercase tracking-[0.36em] text-slate-500">Review Forge</p>
-            <h1 className="mt-3 text-3xl font-semibold text-white">复盘与长期成长</h1>
+            <h1 className="mt-3 text-3xl font-semibold text-white">Review & Long-term Growth</h1>
+            <p className="mt-2 text-sm text-slate-400">复盘与长期成长</p>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
               这里不只回看最近一轮，而是把近期节律、56 天能力块和 4–6 个月前的锚点放在同一张桌面上，看你究竟是在前进，还是只是偶尔高光。
             </p>

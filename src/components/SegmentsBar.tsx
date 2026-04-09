@@ -26,7 +26,7 @@ export function SegmentsBar({ segments, totalDurationMs, currentPhase }: Segment
   }
 
   return (
-    <div className="flex h-5 w-full overflow-hidden rounded-full bg-slate-800 select-none">
+    <div className="flex h-6 w-full overflow-hidden rounded-full bg-slate-800/90 select-none">
       {pieces.length === 0 ? (
         <div className="h-full w-0 rounded-full" />
       ) : (
@@ -37,7 +37,7 @@ export function SegmentsBar({ segments, totalDurationMs, currentPhase }: Segment
             <div
               key={p.key}
               className={clsx(
-                'relative flex h-full items-center justify-center overflow-hidden transition-[width] duration-1000 ease-linear',
+                'relative flex h-full items-center justify-center overflow-hidden will-change-[width]',
                 p.type === 'stim' ? 'bg-stim' : 'bg-rest',
                 p.active && 'saturate-[1.25] brightness-110 shadow-[0_0_15px_rgba(255,255,255,0.2)]'
               )}
@@ -48,7 +48,7 @@ export function SegmentsBar({ segments, totalDurationMs, currentPhase }: Segment
             >
               <span
                 className={clsx(
-                  'pointer-events-none select-none whitespace-nowrap px-1 text-[10px] leading-none',
+                  'pointer-events-none select-none whitespace-nowrap px-1 text-[10px] font-medium tabular-nums leading-none',
                   p.type === 'stim' ? 'text-emerald-50/90' : 'text-amber-950/80'
                 )}
               >

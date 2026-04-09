@@ -85,7 +85,8 @@ export default function SettingsPage({
     <div className="space-y-6">
       <section className="rounded-[32px] border border-white/10 bg-white/[0.05] p-5 shadow-[0_30px_100px_rgba(0,0,0,0.32)] backdrop-blur-xl">
         <p className="text-[11px] uppercase tracking-[0.36em] text-slate-500">Control Room</p>
-        <h1 className="mt-3 text-3xl font-semibold text-white">设置与同步</h1>
+        <h1 className="mt-3 text-3xl font-semibold text-white">Settings & Sync</h1>
+        <p className="mt-2 text-sm text-slate-400">设置与同步</p>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
           这里已经不只是训练开关，而是整套产品的控制台。训练参数、公开资料、同步状态、导入导出和未来 Supabase 登录都会从这里进入。
         </p>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Badge, Session } from '@/types/models';
-import { computeLevelAndXP, evaluateBadges, getMedalFamilies, getMedalSummary, getNextBadgeCandidates } from '@/lib/badges';
+import { computeLevelAndXP, evaluateBadges, getMedalFamilies, getMedalSummary, getNextBadgeCandidates, normalizeMedalUnlocks } from '@/lib/badges';
 import { loadBadges, saveBadges } from '@/lib/storage';
 import { MedalCard } from './MedalCard';
 
@@ -11,7 +11,7 @@ interface Props {
 
 export function BadgesPanel({ sessions, previewCount = 2 }: Props) {
   const generated = useMemo(() => evaluateBadges(sessions), [sessions]);
-  const [minted, setMinted] = useState<Badge[]>(() => loadBadges() as Badge[]);
+  const [minted, setMinted] = useState<Badge[]>(() => normalizeMedalUnlocks(loadBadges()));
   const level = useMemo(() => computeLevelAndXP(sessions), [sessions]);
   const summary = useMemo(() => getMedalSummary(sessions), [sessions]);
   const upcoming = useMemo(() => getNextBadgeCandidates(sessions, previewCount), [sessions, previewCount]);
@@ -22,7 +22,7 @@ export function BadgesPanel({ sessions, previewCount = 2 }: Props) {
       const previous = byCode.get(badge.code);
       byCode.set(badge.code, previous ?? badge);
     });
-    const next = Array.from(byCode.values());
+    const next = normalizeMedalUnlocks(Array.from(byCode.values()));
     setMinted(next);
     saveBadges(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,4 +93,3 @@ export function BadgesPanel({ sessions, previewCount = 2 }: Props) {
     </section>
   );
 }
-
