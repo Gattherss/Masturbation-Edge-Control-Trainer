@@ -25,8 +25,8 @@ interface SettingsPageProps {
 
 function SectionShell({ title, children, description }: { title: string; children: React.ReactNode; description?: string }) {
   return (
-    <section className="rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-      <h2 className="text-2xl font-semibold text-white">{title}</h2>
+    <section className="rounded-[30px] border border-white/10 bg-white/[0.04] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:p-5">
+      <h2 className="text-xl font-semibold text-white sm:text-2xl">{title}</h2>
       {description ? <p className="mt-2 text-sm leading-7 text-slate-400">{description}</p> : null}
       <div className="mt-5">{children}</div>
     </section>
@@ -332,10 +332,10 @@ export default function SettingsPage({
                 }
               />
             </label>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap">
               <button
                 type="button"
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={onRequestMagicLink}
                 disabled={!supabaseReady || syncState.status === 'syncing'}
               >
@@ -343,7 +343,7 @@ export default function SettingsPage({
               </button>
               <button
                 type="button"
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={onSyncNow}
                 disabled={!supabaseReady || !hasSupabaseSession || syncState.status === 'syncing'}
               >
@@ -351,7 +351,7 @@ export default function SettingsPage({
               </button>
               <button
                 type="button"
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={onSignOutSupabase}
                 disabled={!hasSupabaseSession || syncState.status === 'syncing'}
               >

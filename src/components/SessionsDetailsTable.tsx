@@ -71,25 +71,25 @@ export default function SessionsDetailsTable({
   }, [filtered, sortKey, limit]);
 
   return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 text-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-sm sm:p-5">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <h2 className="text-lg font-semibold text-white">{title}</h2>
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <label className="text-slate-400">范围
-            <select className="ml-1 rounded border border-slate-700 bg-slate-900 px-1 py-0.5" value={onlyMonth? 'month':'all'} onChange={(e)=> setOnlyMonth(e.target.value==='month')}>
+        <div className="flex flex-col gap-2 text-xs sm:flex-row sm:flex-wrap sm:items-center">
+          <label className="flex items-center justify-between gap-2 rounded-full border border-slate-700/70 bg-slate-900/70 px-3 py-2 text-slate-400 sm:justify-start sm:rounded sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">范围
+            <select className="rounded border border-slate-700 bg-slate-900 px-2 py-1" value={onlyMonth? 'month':'all'} onChange={(e)=> setOnlyMonth(e.target.value==='month')}>
               <option value="all">全部</option>
               <option value="month">本月</option>
             </select>
           </label>
-          <label className="text-slate-400">筛选
-            <select className="ml-1 rounded border border-slate-700 bg-slate-900 px-1 py-0.5" value={ejFilter} onChange={(e)=> setEjFilter(e.target.value as any)}>
+          <label className="flex items-center justify-between gap-2 rounded-full border border-slate-700/70 bg-slate-900/70 px-3 py-2 text-slate-400 sm:justify-start sm:rounded sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">筛选
+            <select className="rounded border border-slate-700 bg-slate-900 px-2 py-1" value={ejFilter} onChange={(e)=> setEjFilter(e.target.value as any)}>
               <option value="any">任意</option>
               <option value="yes">已射精</option>
               <option value="no">未射精</option>
             </select>
           </label>
-          <label className="text-slate-400">排序
-            <select className="ml-1 rounded border border-slate-700 bg-slate-900 px-1 py-0.5" value={sortKey} onChange={(e)=> setSortKey(e.target.value as SortKey)}>
+          <label className="flex items-center justify-between gap-2 rounded-full border border-slate-700/70 bg-slate-900/70 px-3 py-2 text-slate-400 sm:justify-start sm:rounded sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">排序
+            <select className="rounded border border-slate-700 bg-slate-900 px-2 py-1" value={sortKey} onChange={(e)=> setSortKey(e.target.value as SortKey)}>
               <option value="time_desc">时间 ↓</option>
               <option value="time_asc">时间 ↑</option>
               <option value="cei_desc">CEI ↓</option>
@@ -99,7 +99,7 @@ export default function SessionsDetailsTable({
             </select>
           </label>
           <button
-            className="rounded bg-slate-800 px-2 py-1 text-slate-300 hover:bg-slate-700"
+            className="rounded-lg bg-slate-800 px-3 py-2 text-slate-300 hover:bg-slate-700 sm:rounded sm:px-2 sm:py-1"
             onClick={() => {
               const now = new Date();
               const monthSessions = sessions.filter((s)=>{ const d = new Date(s.startAt); return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth(); });
@@ -124,21 +124,21 @@ export default function SessionsDetailsTable({
           {showTransferTools ? (
             <>
               <button
-                className="rounded bg-slate-800 px-2 py-1 text-slate-300 hover:bg-slate-700"
+                className="rounded-lg bg-slate-800 px-3 py-2 text-slate-300 hover:bg-slate-700 sm:rounded sm:px-2 sm:py-1"
                 onClick={() => downloadText(sessionsToCSV(sessions), `sessions_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv')}
                 type="button"
               >
                 导出训练 CSV（全部）
               </button>
               <button
-                className="rounded bg-slate-800 px-2 py-1 text-slate-300 hover:bg-slate-700"
+                className="rounded-lg bg-slate-800 px-3 py-2 text-slate-300 hover:bg-slate-700 sm:rounded sm:px-2 sm:py-1"
                 onClick={() => downloadText(segmentsToCSV(sessions), `segments_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv')}
                 type="button"
               >
                 导出分段 CSV（全部）
               </button>
               <button
-                className="rounded bg-slate-800 px-2 py-1 text-slate-300 hover:bg-slate-700"
+                className="rounded-lg bg-slate-800 px-3 py-2 text-slate-300 hover:bg-slate-700 sm:rounded sm:px-2 sm:py-1"
                 onClick={() =>
                   downloadText(
                     JSON.stringify(
@@ -155,12 +155,12 @@ export default function SessionsDetailsTable({
                 导出 JSON（全部）
               </button>
               <button
-                className="rounded bg-emerald-600/80 px-2 py-1 text-emerald-950 hover:bg-emerald-500"
+                className="rounded-lg bg-emerald-600/80 px-3 py-2 text-emerald-950 hover:bg-emerald-500 sm:rounded sm:px-2 sm:py-1"
                 type="button"
                 onClick={() => inputCsvRef.current?.click()}
               >导入 CSV</button>
               <button
-                className="rounded bg-emerald-600/80 px-2 py-1 text-emerald-950 hover:bg-emerald-500"
+                className="rounded-lg bg-emerald-600/80 px-3 py-2 text-emerald-950 hover:bg-emerald-500 sm:rounded sm:px-2 sm:py-1"
                 type="button"
                 onClick={() => inputJsonRef.current?.click()}
               >导入 JSON</button>
@@ -220,7 +220,66 @@ export default function SessionsDetailsTable({
       {rows.length === 0 ? (
         <p className="mt-2 text-xs text-slate-500">暂无数据</p>
       ) : (
-        <div className="mt-3 max-h-96 overflow-auto">
+        <>
+        <div className="mt-3 space-y-3 md:hidden">
+          {rows.map(({ s, stimMs, restMs }, idx) => {
+            const prev = rows[idx + 1]?.s;
+            const delta = prev ? s.durationMs - prev.durationMs : 0;
+
+            return (
+              <article key={s.id} className="rounded-[22px] border border-slate-800 bg-black/20 p-4 shadow-[0_16px_40px_rgba(0,0,0,0.22)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-white">{new Date(s.startAt).toLocaleDateString()}</div>
+                    <div className="mt-1 text-xs text-slate-400">{new Date(s.startAt).toLocaleTimeString()}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-white">{formatDuration(s.durationMs)}</div>
+                    <div className={"mt-1 text-xs " + (delta > 0 ? 'text-emerald-300' : delta < 0 ? 'text-amber-300' : 'text-slate-500')}>
+                      {delta === 0 ? '持平' : `${delta > 0 ? '+' : ''}${Math.round(delta / 1000)}s`}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
+                    <div className="text-slate-500">刺激</div>
+                    <div className="mt-1 text-sm font-medium text-white">{formatDuration(stimMs)}</div>
+                  </div>
+                  <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
+                    <div className="text-slate-500">休息</div>
+                    <div className="mt-1 text-sm font-medium text-white">{formatDuration(restMs)}</div>
+                  </div>
+                  <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
+                    <div className="text-slate-500">CEI</div>
+                    <div className="mt-1 text-sm font-medium text-white">{s.metrics ? Math.round(s.metrics.cei) : '-'}</div>
+                  </div>
+                  <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
+                    <div className="text-slate-500">结果</div>
+                    <div className="mt-1 text-sm font-medium text-white">{s.ejaculated ? '已射精' : '未射精'}</div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {s.segments.map((seg) => (
+                    <span
+                      key={`${seg.seq}-${seg.startAt}`}
+                      className={
+                        'rounded-full px-2.5 py-1 text-[11px] ' +
+                        (seg.type === 'stim'
+                          ? 'bg-emerald-500/15 text-emerald-300'
+                          : 'bg-amber-400/15 text-amber-300')
+                      }
+                    >
+                      {seg.type === 'stim' ? '刺激' : '休息'} {Math.round(seg.durationMs / 1000)}s
+                    </span>
+                  ))}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+        <div className="mt-3 hidden max-h-96 overflow-auto md:block">
           <table className="w-full table-fixed border-collapse text-xs text-slate-300">
             <thead className="sticky top-0 bg-slate-900/80 text-slate-400">
               <tr>
@@ -275,6 +334,7 @@ export default function SessionsDetailsTable({
             </tbody>
           </table>
         </div>
+        </>
       )}
     </section>
   );

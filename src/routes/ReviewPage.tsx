@@ -70,7 +70,7 @@ export default function ReviewPage({
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <SnapshotTile
             label="Mastery"
             value={String(Math.round(snapshot.masteryScore))}
@@ -100,7 +100,7 @@ export default function ReviewPage({
 
           <section className="rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
             <h2 className="text-xl font-semibold text-white">窗口切片</h2>
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[recentWindow, currentWindow, anchorWindow].filter(Boolean).map((window) => (
                 <div key={window?.key} className="rounded-[24px] border border-white/8 bg-black/20 p-4">
                   <div className="text-sm font-semibold text-white">{window?.label}</div>

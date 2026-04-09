@@ -43,7 +43,7 @@ export default function LadderPage({
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4 shadow-inner">
             <div className="text-xs uppercase tracking-[0.28em] text-slate-500">Promotion</div>
             <div className="mt-3 text-2xl font-semibold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">{rating.progressToNext}%</div>
@@ -69,12 +69,12 @@ export default function LadderPage({
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <section className="rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl font-semibold text-white drop-shadow-md">本赛季榜单</h2>
               <p className="mt-2 text-sm leading-6 text-slate-400">{leaderboardDescription}</p>
             </div>
-            <div className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-xs text-slate-400">
+            <div className="w-fit rounded-full border border-white/10 bg-black/20 px-4 py-2 text-xs text-slate-400">
               {leaderboard.length} 名可见玩家
             </div>
           </div>
@@ -95,15 +95,15 @@ export default function LadderPage({
           ) : null}
           <div className="mt-5 space-y-3">
             {leaderboard.map((entry) => (
-              <div key={entry.id} className="flex items-center gap-3 rounded-[22px] border border-white/8 bg-black/20 px-4 py-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-sm font-semibold text-white">
+              <div key={entry.id} className="flex items-start gap-3 rounded-[22px] border border-white/8 bg-black/20 px-4 py-4 sm:items-center">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-sm font-semibold text-white">
                   {entry.ladder.rank}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold text-white">{entry.profile.displayName}</div>
                   <div className="mt-1 truncate text-xs text-slate-400">{entry.profile.tagline}</div>
                 </div>
-                <div className="text-right">
+                <div className="shrink-0 text-right">
                   <div className="text-sm font-semibold text-white">{entry.ladder.score}</div>
                   <div className="mt-1 text-xs text-slate-400">{entry.ladder.tier} {entry.ladder.division}</div>
                 </div>

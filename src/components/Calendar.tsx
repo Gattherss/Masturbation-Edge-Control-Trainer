@@ -48,32 +48,33 @@ export function Calendar({ sessions }: CalendarProps) {
   const selectedSessions = selectedDay ? groups.get(selectedDay) ?? [] : [];
 
   return (
-    <div className="rounded-[24px] border border-white/8 bg-black/20 p-5">
-      <div className="mb-3 flex items-center justify-between">
+    <div className="rounded-[24px] border border-white/8 bg-black/20 p-4 sm:p-5">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <button
-          className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300"
+          className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-slate-300 sm:text-xs"
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
         >
           上个月
         </button>
-        <div className="text-sm text-slate-300">
+        <div className="text-sm text-slate-300 sm:text-base">
           {cursor.getFullYear()} 年 {cursor.getMonth() + 1} 月
         </div>
         <button
-          className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300"
+          className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-slate-300 sm:text-xs"
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
         >
           下个月
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-2 text-center text-xs text-slate-400">
+      <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-400 sm:gap-2 sm:text-xs">
         {['一', '二', '三', '四', '五', '六', '日'].map((d) => (
           <div key={d} className="py-1">
-            周{d}
+            <span className="sm:hidden">{d}</span>
+            <span className="hidden sm:inline">周{d}</span>
           </div>
         ))}
       </div>
-      <div className="mt-2 grid grid-cols-7 gap-2">
+      <div className="mt-2 grid grid-cols-7 gap-1 sm:gap-2">
         {weeks.flat().map((d) => {
           const key = todayKey(d);
           const hasCheckin = checkins.includes(key);
@@ -84,7 +85,7 @@ export function Calendar({ sessions }: CalendarProps) {
               type="button"
               onClick={() => setSelectedDay(key)}
               className={
-                'aspect-square rounded-[18px] border px-1 py-1 text-left transition ' +
+                'aspect-square rounded-[14px] border px-1 py-1 text-left transition sm:rounded-[18px] ' +
                 (inMonth(d) ? 'border-white/8 bg-white/[0.03] hover:border-white/15' : 'border-white/5 bg-white/[0.015]')
               }
             >
@@ -93,10 +94,10 @@ export function Calendar({ sessions }: CalendarProps) {
                   {d.getDate()}
                 </span>
                 {isToday(d) ? (
-                  <span className="rounded bg-indigo-500/20 px-1 text-[10px] text-indigo-300">今</span>
+                  <span className="rounded bg-indigo-500/20 px-1 text-[9px] text-indigo-300 sm:text-[10px]">今</span>
                 ) : null}
               </div>
-              <div className="mt-1 h-2 w-full rounded-full bg-slate-800">
+              <div className="mt-1 h-1.5 w-full rounded-full bg-slate-800 sm:h-2">
                 <div
                   className={
                     'h-full rounded-full ' +
@@ -110,7 +111,7 @@ export function Calendar({ sessions }: CalendarProps) {
         })}
       </div>
 
-      <Modal open={!!selectedDay} onClose={() => setSelectedDay(null)} title={`日期 ${selectedDay ?? ''}`}>
+      <Modal open={!!selectedDay} onClose={() => setSelectedDay(null)} title={`日期 ${selectedDay ?? ''}`} size="lg">
         <DayView dateKey={selectedDay ?? ''} sessions={selectedSessions} />
       </Modal>
     </div>
