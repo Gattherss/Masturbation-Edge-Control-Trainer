@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, type TouchEvent as ReactTouchEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TrainingWorkspace } from '@/features/training/TrainingWorkspace';
 import { getPlan, loadCustomPlan, saveCustomPlan } from '@/lib/plans';
 import { loadSettings, saveSettings } from '@/lib/settings';
@@ -75,11 +75,34 @@ const NAV_ITEMS: Array<{ key: ViewTab; label: string; short: string }> = [
   { key: 'settings', label: '设置', short: '设' }
 ];
 
+const VIEW_SEQUENCE: ViewTab[] = ['training', 'review', 'medals', 'ladder', 'settings'];
+
+function getAdjacentView(current: ViewTab, direction: 'prev' | 'next') {
+  const currentIndex = VIEW_SEQUENCE.indexOf(current);
+  if (currentIndex === -1) {
+    return current;
+  }
+
+  const nextIndex =
+    direction === 'next'
+      ? Math.min(VIEW_SEQUENCE.length - 1, currentIndex + 1)
+      : Math.max(0, currentIndex - 1);
+
+  return VIEW_SEQUENCE[nextIndex];
+}
+
+function shouldIgnoreSwipeTarget(target: EventTarget | null) {
+  return (
+    target instanceof HTMLElement &&
+    Boolean(target.closest('button, input, textarea, select, a, [role="dialog"], [data-swipe-lock="true"]'))
+  );
+}
+
 function SummaryChip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[24px] border border-white/10 bg-white/[0.04] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md">
-      <div className="text-[13px] uppercase tracking-[0.3em] text-slate-400 drop-shadow-md xl:text-sm">{label}</div>
-      <div className="mt-2 text-2xl font-semibold text-white xl:text-3xl">{value}</div>
+    <div className="rounded-[20px] border border-white/10 bg-white/[0.04] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md md:rounded-[24px] md:px-5 md:py-4">
+      <div className="text-[11px] uppercase tracking-[0.28em] text-slate-400 drop-shadow-md md:text-[13px] xl:text-sm">{label}</div>
+      <div className="mt-1.5 text-xl font-semibold text-white md:mt-2 md:text-2xl xl:text-3xl">{value}</div>
     </div>
   );
 }
@@ -127,6 +150,7 @@ export default function App() {
   const [remoteLeaderboardStatus, setRemoteLeaderboardStatus] = useState<RemoteLeaderboardStatus>('idle');
   const [remoteLeaderboardError, setRemoteLeaderboardError] = useState<string | null>(null);
   const autoSyncInFlightRef = useRef(false);
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const plan = useMemo(
     () => (settings.mode === 'custom' ? customPlan : getPlan(settings.mode)),
@@ -394,6 +418,35 @@ export default function App() {
 
     snoozeWelcomePrompt(false);
   }, [welcomeGateManuallyOpen, snoozeWelcomePrompt]);
+
+  const handleMainTouchStart = useCallback((event: ReactTouchEvent<HTMLElement>) => {
+    if (welcomePromptOpen || shouldIgnoreSwipeTarget(event.target)) {
+      swipeStartRef.current = null;
+      return;
+    }
+
+    const touch = event.touches[0];
+    swipeStartRef.current = { x: touch.clientX, y: touch.clientY };
+  }, [welcomePromptOpen]);
+
+  const handleMainTouchEnd = useCallback((event: ReactTouchEvent<HTMLElement>) => {
+    const start = swipeStartRef.current;
+    swipeStartRef.current = null;
+
+    if (!start || welcomePromptOpen || shouldIgnoreSwipeTarget(event.target)) {
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+
+    if (Math.abs(deltaX) < 72 || Math.abs(deltaY) > 56) {
+      return;
+    }
+
+    setView((current) => getAdjacentView(current, deltaX < 0 ? 'next' : 'prev'));
+  }, [welcomePromptOpen]);
 
   const handleWelcomeMagicLink = useCallback(async () => {
     if (!syncState.email) {
@@ -707,12 +760,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-transparent text-slate-100">
       <div className="mx-auto max-w-[1600px] px-4 pb-28 pt-4 sm:px-6 xl:px-10 2xl:px-12">
-        <header className="rounded-[36px] border border-white/10 bg-white/[0.05] p-5 shadow-[0_30px_110px_rgba(0,0,0,0.34)] backdrop-blur-xl">
+        <header className="rounded-[30px] border border-white/10 bg-white/[0.05] p-4 shadow-[0_30px_110px_rgba(0,0,0,0.34)] backdrop-blur-xl md:rounded-[36px] md:p-5">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-[11px] uppercase tracking-[0.36em] text-sky-400 drop-shadow-md">寸止边缘训练器 / Edge Control Trainer</p>
-              <h1 className="mt-3 text-5xl font-bold tracking-wide text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.15)] xl:text-6xl">Edge Control Trainer</h1>
-              <p className="mt-3 text-lg text-slate-300 xl:text-xl">寸止边缘训练器</p>
+              <h1 className="mt-3 text-3xl font-bold tracking-wide text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.15)] sm:text-5xl xl:text-6xl">Edge Control Trainer</h1>
+              <p className="mt-2 text-base text-slate-300 xl:text-xl">寸止边缘训练器</p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
@@ -730,7 +783,7 @@ export default function App() {
                 </p>
               </div>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
               <SummaryChip label="赛季" value={currentSeason.name} />
               <SummaryChip label="同步" value={getSyncSummaryValue(syncState, supabaseReady)} />
               <SummaryChip label="记录" value={`${sessions.length} 次`} />
@@ -757,7 +810,9 @@ export default function App() {
           </nav>
         </header>
 
-        <main className="mt-6 space-y-6">
+        <p className="mt-4 text-xs text-slate-500 md:hidden">左右滑动可在训练、复盘、勋章、天梯和设置之间切页。</p>
+
+        <main className="mt-5 space-y-5 md:mt-6 md:space-y-6" onTouchStart={handleMainTouchStart} onTouchEnd={handleMainTouchEnd}>
           {view === 'training' ? (
             <TrainingWorkspace
               plan={plan}
@@ -834,13 +889,16 @@ export default function App() {
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-50 mx-auto flex w-[min(94vw,720px)] items-center justify-between rounded-full border border-white/10 bg-slate-950/90 px-3 py-2 shadow-[0_18px_50px_rgba(0,0,0,0.4)] backdrop-blur-xl md:hidden">
+      <nav
+        className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-50 mx-auto flex w-[min(94vw,720px)] items-center justify-between rounded-full border border-white/10 bg-slate-950/90 px-2 py-2 shadow-[0_18px_50px_rgba(0,0,0,0.4)] backdrop-blur-xl md:hidden"
+        data-swipe-lock="true"
+      >
         {NAV_ITEMS.map((item) => (
           <button
             key={item.key}
             type="button"
             className={
-              'flex min-w-[56px] flex-col items-center rounded-full px-3 py-2 text-[11px] transition ' +
+              'flex min-w-[52px] flex-col items-center rounded-full px-2 py-2 text-[10px] transition ' +
               (view === item.key
                 ? 'bg-white text-slate-950'
                 : 'text-slate-300')

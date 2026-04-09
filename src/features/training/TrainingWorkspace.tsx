@@ -76,17 +76,17 @@ export function TrainingWorkspace({ plan, settings, onSaved, onToast }: Training
         title="保存训练记录"
         size="md"
         footer={
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <button
               type="button"
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200"
+              className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-200 sm:w-auto sm:py-2"
               onClick={() => finalizeSession({ note: '', perceivedArousal: null, stopReason: '' })}
             >
               直接保存
             </button>
             <button
               type="button"
-              className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950"
+              className="w-full rounded-full bg-white px-4 py-3 text-sm font-semibold text-slate-950 sm:w-auto sm:py-2"
               onClick={() => finalizeSession(noteForm)}
             >
               保存
