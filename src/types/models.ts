@@ -148,6 +148,7 @@ export interface WelcomePromptState {
   mode: WelcomePromptMode;
   updatedAt: string;
   remindAfter?: string;
+  version?: string;
 }
 
 export interface MasteryWindow {

@@ -2,9 +2,15 @@ import type { WelcomePromptState } from '@/types/models';
 import { loadWelcomePromptState, saveWelcomePromptState } from './storage';
 
 export const WELCOME_PROMPT_SNOOZE_MS = 24 * 60 * 60 * 1000;
+export const WELCOME_PROMPT_VERSION = '2026-04-09-mobile-v2';
 
 export function getWelcomePromptState() {
-  return loadWelcomePromptState();
+  const state = loadWelcomePromptState();
+  if (!state) {
+    return null;
+  }
+
+  return state.version === WELCOME_PROMPT_VERSION ? state : null;
 }
 
 export function persistWelcomePromptState(state: WelcomePromptState | null) {
@@ -14,7 +20,8 @@ export function persistWelcomePromptState(state: WelcomePromptState | null) {
 export function buildGuestWelcomePromptState(now = new Date()): WelcomePromptState {
   return {
     mode: 'guest',
-    updatedAt: now.toISOString()
+    updatedAt: now.toISOString(),
+    version: WELCOME_PROMPT_VERSION
   };
 }
 
@@ -25,7 +32,8 @@ export function buildLaterWelcomePromptState(
   return {
     mode: 'later',
     updatedAt: now.toISOString(),
-    remindAfter: new Date(now.getTime() + remindAfterMs).toISOString()
+    remindAfter: new Date(now.getTime() + remindAfterMs).toISOString(),
+    version: WELCOME_PROMPT_VERSION
   };
 }
 

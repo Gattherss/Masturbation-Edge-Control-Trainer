@@ -244,6 +244,7 @@ export default function App() {
   const [view, setView] = useState<ViewTab>('training');
   const [pageDirection, setPageDirection] = useState(1);
   const [welcomeGateManuallyOpen, setWelcomeGateManuallyOpen] = useState(false);
+  const [mobileHeaderExpanded, setMobileHeaderExpanded] = useState(false);
   const [remoteLeaderboard, setRemoteLeaderboard] = useState<LeaderboardEntry[] | null>(null);
   const [remoteLeaderboardStatus, setRemoteLeaderboardStatus] = useState<RemoteLeaderboardStatus>('idle');
   const [remoteLeaderboardError, setRemoteLeaderboardError] = useState<string | null>(null);
@@ -400,6 +401,7 @@ export default function App() {
     }
 
     setWelcomeGateManuallyOpen(false);
+    setMobileHeaderExpanded(false);
     handleWelcomePromptStateChange(null);
   }, [handleWelcomePromptStateChange, syncState.userId]);
 
@@ -528,6 +530,7 @@ export default function App() {
   const snoozeWelcomePrompt = useCallback(
     (showToast: boolean) => {
       setWelcomeGateManuallyOpen(false);
+      setMobileHeaderExpanded(false);
       handleWelcomePromptStateChange(buildLaterWelcomePromptState());
       if (showToast) {
         setToast('先不登录也可以，我们今天先不再提醒你。');
@@ -538,6 +541,7 @@ export default function App() {
 
   const handleContinueAsGuest = useCallback(() => {
     setWelcomeGateManuallyOpen(false);
+    setMobileHeaderExpanded(false);
     handleWelcomePromptStateChange(buildGuestWelcomePromptState());
     setToast('当前将以游客模式继续，记录会先保存在这台设备上。');
   }, [handleWelcomePromptStateChange]);
@@ -548,6 +552,7 @@ export default function App() {
       return;
     }
 
+    setMobileHeaderExpanded(false);
     setWelcomeGateManuallyOpen(true);
   }, [navigateToView, supabaseReady, syncState.userId]);
 
@@ -994,11 +999,99 @@ export default function App() {
       <div className="relative z-10 mx-auto max-w-[1600px] px-4 pb-28 pt-4 sm:px-6 xl:px-10 2xl:px-12">
         <header
           className={clsx(
-            'rounded-[28px] border p-4 shadow-[0_30px_110px_rgba(0,0,0,0.34)] backdrop-blur-xl md:rounded-[36px] md:p-5',
+            'rounded-[24px] border p-3 shadow-[0_30px_110px_rgba(0,0,0,0.34)] backdrop-blur-xl md:rounded-[36px] md:p-5',
             activeViewMeta.headerShellClass
           )}
         >
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="md:hidden">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className={clsx('text-[10px] uppercase tracking-[0.3em] drop-shadow-md', activeViewMeta.eyebrowClass)}>
+                  Edge Control
+                </p>
+                <h1 className="mt-1 text-xl font-semibold tracking-wide text-white">寸止边缘训练器</h1>
+                <p className="mt-1 text-[11px] leading-5 text-slate-400">
+                  {currentSeason.name} · {sessions.length} saves · {activeTheme.label}
+                </p>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  className={clsx(
+                    'rounded-full border px-3 py-2 text-xs font-medium transition hover:border-white/30 hover:bg-white/[0.16]',
+                    activeViewMeta.railClass
+                  )}
+                  onClick={handleOpenSyncAccess}
+                >
+                  {syncState.userId ? 'Account' : 'Sign In'}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-[11px] text-slate-300 transition hover:bg-white/[0.08]"
+                  onClick={() => setMobileHeaderExpanded((expanded) => !expanded)}
+                  data-swipe-lock="true"
+                >
+                  {mobileHeaderExpanded ? '收起' : '展开'}
+                </button>
+              </div>
+            </div>
+
+            <AnimatePresence initial={false}>
+              {mobileHeaderExpanded ? (
+                <motion.div
+                  key="mobile-header-expanded"
+                  className="overflow-hidden"
+                  initial={settings.reduceMotion ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0, y: -8 }}
+                  animate={{ opacity: 1, height: 'auto', y: 0 }}
+                  exit={settings.reduceMotion ? { opacity: 1, height: 0 } : { opacity: 0, height: 0, y: -6 }}
+                  transition={{ duration: settings.reduceMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <div className="mt-3 space-y-3 border-t border-white/8 pt-3">
+                    <div
+                      className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-white/10 bg-black/25 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                      data-swipe-lock="true"
+                    >
+                      <span className="px-2 text-[10px] uppercase tracking-[0.24em] text-slate-500">Theme</span>
+                      {THEME_OPTIONS.map((theme) => (
+                        <button
+                          key={theme.id}
+                          type="button"
+                          className={clsx(
+                            'flex items-center gap-2 rounded-full px-2.5 py-1.5 text-[11px] font-medium transition',
+                            settings.theme === theme.id ? theme.activeClass : 'text-slate-300 hover:bg-white/[0.08]'
+                          )}
+                          onClick={() => handleThemeChange(theme.id)}
+                        >
+                          <span className={clsx('h-2 w-2 rounded-full', theme.dotClass)} />
+                          <span>{theme.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      {summaryChips.map((item) => (
+                        <div key={item.label} className="rounded-[16px] border border-white/10 bg-black/20 px-3 py-2.5">
+                          <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">{item.label}</div>
+                          <div className="mt-1 text-sm font-semibold text-white">{item.value}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <p className="text-[11px] leading-5 text-slate-400">
+                      {syncState.userId
+                        ? syncState.email ?? 'Supabase sync is active.'
+                        : supabaseReady
+                          ? '需要的时候再点 Sign In 打开登录方式弹窗。'
+                          : 'Supabase 还没配置好，所以当前设备会继续只保存在本地。'}
+                    </p>
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
+
+          <div className="hidden md:flex md:flex-col md:gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
               <p className={clsx('text-[11px] uppercase tracking-[0.36em] drop-shadow-md', activeViewMeta.eyebrowClass)}>
                 寸止边缘训练器 / Edge Control Trainer
@@ -1049,18 +1142,6 @@ export default function App() {
                     : 'Supabase is not configured yet, so this device is staying in local mode.'}
                 <span className="ml-2 text-slate-500">Theme {activeTheme.label}</span>
               </p>
-
-              <details className="mt-3 rounded-[22px] border border-white/10 bg-black/20 p-3 md:hidden" data-swipe-lock="true">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm text-slate-200">
-                  <span className="font-medium">Status</span>
-                  <span className="text-xs text-slate-400">{currentSeason.name} · {sessions.length} saves</span>
-                </summary>
-                <div className="mt-3 grid gap-2">
-                  {summaryChips.map((item) => (
-                    <SummaryChip key={item.label} label={item.label} value={item.value} />
-                  ))}
-                </div>
-              </details>
             </div>
             <div className="hidden gap-2 md:grid md:grid-cols-3 md:gap-3">
               {summaryChips.map((item) => (
