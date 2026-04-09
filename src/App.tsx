@@ -3,6 +3,7 @@ import { TrainingWorkspace } from '@/features/training/TrainingWorkspace';
 import { getPlan, loadCustomPlan, saveCustomPlan } from '@/lib/plans';
 import { loadSettings, saveSettings } from '@/lib/settings';
 import SessionsDetailsTable from '@/components/SessionsDetailsTable';
+import { WelcomeGate } from '@/components/WelcomeGate';
 import { todayKey } from '@/lib/time';
 import { listSessions, removeSession as removeStoredSession } from '@/data/repositories/sessionRepo';
 import { compareToBaseline } from '@/lib/baseline';
@@ -13,6 +14,13 @@ import { buildLeaderboard, buildLadderRating, getCurrentSeason } from '@/lib/lad
 import { loadProfile, persistProfile } from '@/lib/profile';
 import { getSyncState, persistSyncState } from '@/lib/sync';
 import { getSupabaseEnv } from '@/lib/supabase';
+import {
+  buildGuestWelcomePromptState,
+  buildLaterWelcomePromptState,
+  getWelcomePromptState,
+  persistWelcomePromptState,
+  shouldShowWelcomePrompt
+} from '@/lib/welcomePrompt';
 import { MedalCard } from '@/components/MedalCard';
 import type { Badge, Baseline, LadderRating, LeaderboardEntry, PublicProfile, Session, Settings as AppSettings, SyncState } from '@/types/models';
 import type { FinalizeResult } from '@/services/scoringPipeline';
@@ -104,6 +112,8 @@ export default function App() {
   );
   const [profile, setProfile] = useState<PublicProfile>(() => loadProfile());
   const [syncState, setSyncState] = useState<SyncState>(() => getSyncState());
+  const [welcomePromptState, setWelcomePromptState] = useState(() => getWelcomePromptState());
+  const [authBootstrapComplete, setAuthBootstrapComplete] = useState(false);
   const [narrative, setNarrative] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [toast, setToast] = useState<string | null>(null);
@@ -127,6 +137,14 @@ export default function App() {
   const supabaseEnv = useMemo(() => getSupabaseEnv(), []);
   const supabaseReady = supabaseEnv.enabled;
   const ladderRating = useMemo(() => buildLadderRating(snapshot), [snapshot]);
+  const welcomePromptOpen = useMemo(
+    () =>
+      supabaseReady &&
+      authBootstrapComplete &&
+      !syncState.userId &&
+      shouldShowWelcomePrompt(welcomePromptState),
+    [authBootstrapComplete, supabaseReady, syncState.userId, welcomePromptState]
+  );
   const featuredMedal = useMemo(
     () => medals.find((medal) => medal.code === profile.featuredMedalCode) ?? getFeaturedBadge(medals),
     [medals, profile.featuredMedalCode]
@@ -153,6 +171,11 @@ export default function App() {
 
   const handleSyncStateChange = useCallback((nextSyncState: SyncState) => {
     setSyncState(nextSyncState);
+  }, []);
+
+  const handleWelcomePromptStateChange = useCallback((nextState: ReturnType<typeof getWelcomePromptState>) => {
+    setWelcomePromptState(nextState);
+    persistWelcomePromptState(nextState);
   }, []);
 
   const refreshRemoteLeaderboard = useCallback(async () => {
@@ -199,10 +222,19 @@ export default function App() {
   }, [syncState]);
 
   useEffect(() => {
+    if (!syncState.userId) {
+      return;
+    }
+
+    handleWelcomePromptStateChange(null);
+  }, [handleWelcomePromptStateChange, syncState.userId]);
+
+  useEffect(() => {
     if (supabaseReady) {
       return;
     }
 
+    setAuthBootstrapComplete(true);
     setSyncState((prev) => ({
       ...prev,
       provider: 'local',
@@ -215,6 +247,8 @@ export default function App() {
     if (!supabaseReady) return;
 
     let active = true;
+    setAuthBootstrapComplete(false);
+
     const applyUser = (user: { id: string; email?: string | null } | null) => {
       if (!active) return;
       setSyncState((prev) => ({
@@ -228,7 +262,11 @@ export default function App() {
     };
 
     restoreSupabaseUser()
-      .then((user) => applyUser(user))
+      .then((user) => {
+        applyUser(user);
+        if (!active) return;
+        setAuthBootstrapComplete(true);
+      })
       .catch((error) => {
         if (!active) return;
         setSyncState((prev) => ({
@@ -237,6 +275,7 @@ export default function App() {
           status: 'error',
           lastError: describeSupabaseError(error)
         }));
+        setAuthBootstrapComplete(true);
       });
 
     const unsubscribe = listenToSupabaseAuth((user) => applyUser(user));
@@ -313,6 +352,67 @@ export default function App() {
       setToast(message);
     }
   }, [handleSyncStateChange, syncState]);
+
+  const handleWelcomeEmailChange = useCallback(
+    (email: string) => {
+      handleSyncStateChange({
+        ...syncState,
+        email
+      });
+    },
+    [handleSyncStateChange, syncState]
+  );
+
+  const snoozeWelcomePrompt = useCallback(
+    (showToast: boolean) => {
+      handleWelcomePromptStateChange(buildLaterWelcomePromptState());
+      if (showToast) {
+        setToast('先不登录也可以，我们今天先不再提醒你。');
+      }
+    },
+    [handleWelcomePromptStateChange]
+  );
+
+  const handleContinueAsGuest = useCallback(() => {
+    handleWelcomePromptStateChange(buildGuestWelcomePromptState());
+    setToast('当前将以游客模式继续，记录会先保存在这台设备上。');
+  }, [handleWelcomePromptStateChange]);
+
+  const handleWelcomeMagicLink = useCallback(async () => {
+    if (!syncState.email) {
+      setToast('请先填写登录邮箱，再发送登录链接。');
+      return;
+    }
+
+    try {
+      handleSyncStateChange({
+        ...syncState,
+        provider: 'supabase',
+        status: 'syncing',
+        lastError: undefined
+      });
+
+      await requestMagicLink(syncState.email);
+
+      handleSyncStateChange({
+        ...syncState,
+        provider: 'supabase',
+        status: 'idle',
+        lastError: undefined
+      });
+      snoozeWelcomePrompt(false);
+      setToast('登录链接已经发出，请去邮箱完成确认。');
+    } catch (error) {
+      const message = describeSupabaseError(error);
+      handleSyncStateChange({
+        ...syncState,
+        provider: 'supabase',
+        status: 'error',
+        lastError: message
+      });
+      setToast(message);
+    }
+  }, [handleSyncStateChange, snoozeWelcomePrompt, syncState]);
 
   const handleSyncNow = useCallback(async () => {
     try {
@@ -728,6 +828,18 @@ export default function App() {
           </button>
         </div>
       ) : null}
+
+      <WelcomeGate
+        open={welcomePromptOpen}
+        email={syncState.email ?? ''}
+        loading={syncState.status === 'syncing'}
+        error={syncState.status === 'error' ? syncState.lastError : undefined}
+        onClose={() => snoozeWelcomePrompt(false)}
+        onEmailChange={handleWelcomeEmailChange}
+        onSendMagicLink={handleWelcomeMagicLink}
+        onContinueAsGuest={handleContinueAsGuest}
+        onMaybeLater={() => snoozeWelcomePrompt(true)}
+      />
     </div>
   );
 }

@@ -5,7 +5,8 @@ import type {
   PublicProfile,
   Session,
   SessionDraft,
-  SyncState
+  SyncState,
+  WelcomePromptState
 } from '@/types/models';
 
 interface StorageDriver {
@@ -50,6 +51,7 @@ export const STORAGE_KEYS = {
   settings: 'edgingSettings',
   publicProfile: 'edgingPublicProfile',
   syncState: 'edgingSyncState',
+  welcomePrompt: 'edgingWelcomePrompt',
   version: 'edgingVersion',
   draft: 'edgingCurrentSession',
   dailyAgg: 'edgingDailyAgg',
@@ -249,4 +251,17 @@ export function loadSyncState(defaultSyncState: SyncState): SyncState {
 
 export function saveSyncState(syncState: SyncState) {
   save(STORAGE_KEYS.syncState, syncState);
+}
+
+export function loadWelcomePromptState(): WelcomePromptState | null {
+  return load<WelcomePromptState | null>(STORAGE_KEYS.welcomePrompt, null);
+}
+
+export function saveWelcomePromptState(state: WelcomePromptState | null) {
+  if (state === null) {
+    remove(STORAGE_KEYS.welcomePrompt);
+    return;
+  }
+
+  save(STORAGE_KEYS.welcomePrompt, state);
 }

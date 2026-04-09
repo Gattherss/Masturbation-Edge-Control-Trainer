@@ -140,6 +140,14 @@ export interface SyncState {
   email?: string;
 }
 
+export type WelcomePromptMode = 'guest' | 'later';
+
+export interface WelcomePromptState {
+  mode: WelcomePromptMode;
+  updatedAt: string;
+  remindAfter?: string;
+}
+
 export interface MasteryWindow {
   key: 'recent' | 'current' | 'anchor';
   label: string;
