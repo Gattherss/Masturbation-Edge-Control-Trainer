@@ -49,7 +49,18 @@ export function WelcomeGate({
       }
     >
       <div className="space-y-5">
-        <div className="rounded-[26px] border border-sky-300/15 bg-sky-400/10 p-5">
+        <section className="rounded-[26px] border border-white/8 bg-white/[0.04] p-5">
+          <div className="text-xs uppercase tracking-[0.28em] text-slate-400">What This Is</div>
+          <h3 className="mt-3 text-2xl font-semibold text-white">这是一个自慰边缘控制训练系统</h3>
+          <p className="mt-3 text-sm leading-7 text-slate-300">
+            你可以在训练过程中记录每一轮刺激与休息的时间、状态和结果，把原本零散的体验变成可追踪、可复盘的训练数据，从而更具体地提升控制力、耐力和长期表现。
+          </p>
+          <p className="mt-3 text-sm leading-7 text-slate-400">
+            这个项目不只是计时器。它会把单次训练拆成节律、容量和稳定性的变化，再继续累积成勋章、赛季评分和长期成长轨迹，让你更清楚自己到底在怎样进步。
+          </p>
+        </section>
+
+        <section className="rounded-[26px] border border-sky-300/15 bg-sky-400/10 p-5">
           <div className="text-xs uppercase tracking-[0.28em] text-sky-200/80">Sync First</div>
           <h3 className="mt-3 text-2xl font-semibold text-white">登录后可以把训练记录同步到你的账号</h3>
           <p className="mt-3 text-sm leading-7 text-slate-300">
@@ -83,9 +94,9 @@ export function WelcomeGate({
             >
               {loading ? '发送中...' : '发送登录链接'}
             </button>
-            <p className="text-xs leading-6 text-slate-400">如果你只是想先体验一下，也可以直接走游客模式，本地记录照样能用。</p>
+            <p className="text-xs leading-6 text-slate-400">如果你只想先体验一下，也可以直接走游客模式，本地记录照样能用。</p>
           </div>
-        </div>
+        </section>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-[22px] border border-white/8 bg-white/[0.04] p-4">
