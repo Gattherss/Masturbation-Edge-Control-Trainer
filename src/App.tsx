@@ -1,5 +1,7 @@
-import { Suspense, lazy, type TouchEvent as ReactTouchEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import { Suspense, lazy, type TouchEvent as ReactTouchEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TrainingWorkspace } from '@/features/training/TrainingWorkspace';
+import clsx from 'clsx';
+import { AnimatePresence, motion } from 'framer-motion';
 import { getPlan, loadCustomPlan, saveCustomPlan } from '@/lib/plans';
 import { loadSettings, saveSettings } from '@/lib/settings';
 import SessionsDetailsTable from '@/components/SessionsDetailsTable';
@@ -26,7 +28,17 @@ import {
   persistWelcomePromptState
 } from '@/lib/welcomePrompt';
 import { MedalCard } from '@/components/MedalCard';
-import type { Badge, Baseline, LadderRating, LeaderboardEntry, PublicProfile, Session, Settings as AppSettings, SyncState } from '@/types/models';
+import type {
+  AppThemeId,
+  Badge,
+  Baseline,
+  LadderRating,
+  LeaderboardEntry,
+  PublicProfile,
+  Session,
+  Settings as AppSettings,
+  SyncState
+} from '@/types/models';
 import type { FinalizeResult } from '@/services/scoringPipeline';
 import { handleBaselineAfterDelete } from '@/services/baselineService';
 import {
@@ -76,6 +88,91 @@ const NAV_ITEMS: Array<{ key: ViewTab; label: string; short: string }> = [
 ];
 
 const VIEW_SEQUENCE: ViewTab[] = ['training', 'review', 'medals', 'ladder', 'settings'];
+
+const THEME_OPTIONS: Array<{
+  id: AppThemeId;
+  label: string;
+  activeClass: string;
+  dotClass: string;
+}> = [
+  {
+    id: 'midnight',
+    label: 'Midnight',
+    activeClass: 'bg-sky-100 text-slate-950 shadow-[0_12px_36px_rgba(125,211,252,0.24)]',
+    dotClass: 'bg-sky-400'
+  },
+  {
+    id: 'ember',
+    label: 'Ember',
+    activeClass: 'bg-amber-100 text-stone-950 shadow-[0_12px_36px_rgba(251,191,36,0.24)]',
+    dotClass: 'bg-amber-400'
+  },
+  {
+    id: 'tide',
+    label: 'Tide',
+    activeClass: 'bg-emerald-100 text-emerald-950 shadow-[0_12px_36px_rgba(45,212,191,0.22)]',
+    dotClass: 'bg-emerald-400'
+  }
+];
+
+const VIEW_META: Record<
+  ViewTab,
+  {
+    eyebrowClass: string;
+    headerShellClass: string;
+    activeNavClass: string;
+    pageAuraClass: string;
+    pageGlowTopClass: string;
+    pageGlowBottomClass: string;
+    railClass: string;
+  }
+> = {
+  training: {
+    eyebrowClass: 'text-sky-300',
+    headerShellClass: 'border-sky-300/18 bg-gradient-to-br from-sky-400/[0.14] via-white/[0.05] to-white/[0.03]',
+    activeNavClass: 'bg-sky-100 text-slate-950 shadow-[0_14px_40px_rgba(56,189,248,0.24)]',
+    pageAuraClass: 'from-sky-400/18 via-cyan-300/10 to-transparent',
+    pageGlowTopClass: 'bg-sky-400/16',
+    pageGlowBottomClass: 'bg-cyan-400/14',
+    railClass: 'border-sky-300/18 bg-sky-400/10 text-sky-100'
+  },
+  review: {
+    eyebrowClass: 'text-amber-300',
+    headerShellClass: 'border-amber-300/18 bg-gradient-to-br from-amber-300/[0.16] via-white/[0.05] to-white/[0.03]',
+    activeNavClass: 'bg-amber-100 text-stone-950 shadow-[0_14px_40px_rgba(251,191,36,0.22)]',
+    pageAuraClass: 'from-amber-300/18 via-orange-300/10 to-transparent',
+    pageGlowTopClass: 'bg-amber-400/14',
+    pageGlowBottomClass: 'bg-orange-400/12',
+    railClass: 'border-amber-300/18 bg-amber-300/12 text-amber-50'
+  },
+  medals: {
+    eyebrowClass: 'text-rose-200',
+    headerShellClass: 'border-rose-300/18 bg-gradient-to-br from-rose-300/[0.16] via-white/[0.05] to-white/[0.03]',
+    activeNavClass: 'bg-rose-100 text-rose-950 shadow-[0_14px_40px_rgba(251,113,133,0.22)]',
+    pageAuraClass: 'from-rose-300/18 via-fuchsia-300/10 to-transparent',
+    pageGlowTopClass: 'bg-rose-400/14',
+    pageGlowBottomClass: 'bg-fuchsia-400/12',
+    railClass: 'border-rose-300/18 bg-rose-300/12 text-rose-50'
+  },
+  ladder: {
+    eyebrowClass: 'text-emerald-300',
+    headerShellClass: 'border-emerald-300/18 bg-gradient-to-br from-emerald-300/[0.15] via-white/[0.05] to-white/[0.03]',
+    activeNavClass: 'bg-emerald-100 text-emerald-950 shadow-[0_14px_40px_rgba(52,211,153,0.22)]',
+    pageAuraClass: 'from-emerald-300/18 via-teal-300/10 to-transparent',
+    pageGlowTopClass: 'bg-emerald-400/14',
+    pageGlowBottomClass: 'bg-teal-400/12',
+    railClass: 'border-emerald-300/18 bg-emerald-300/12 text-emerald-50'
+  },
+  settings: {
+    eyebrowClass: 'text-indigo-200',
+    headerShellClass: 'border-indigo-300/18 bg-gradient-to-br from-indigo-300/[0.14] via-white/[0.05] to-white/[0.03]',
+    activeNavClass: 'bg-indigo-100 text-indigo-950 shadow-[0_14px_40px_rgba(165,180,252,0.22)]',
+    pageAuraClass: 'from-indigo-300/18 via-sky-300/10 to-transparent',
+    pageGlowTopClass: 'bg-indigo-400/14',
+    pageGlowBottomClass: 'bg-sky-400/12',
+    railClass: 'border-indigo-300/18 bg-indigo-300/12 text-indigo-50'
+  }
+};
 
 function getAdjacentView(current: ViewTab, direction: 'prev' | 'next') {
   const currentIndex = VIEW_SEQUENCE.indexOf(current);
@@ -145,6 +242,7 @@ export default function App() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [view, setView] = useState<ViewTab>('training');
+  const [pageDirection, setPageDirection] = useState(1);
   const [welcomeGateManuallyOpen, setWelcomeGateManuallyOpen] = useState(false);
   const [remoteLeaderboard, setRemoteLeaderboard] = useState<LeaderboardEntry[] | null>(null);
   const [remoteLeaderboardStatus, setRemoteLeaderboardStatus] = useState<RemoteLeaderboardStatus>('idle');
@@ -166,6 +264,11 @@ export default function App() {
   const supabaseEnv = useMemo(() => getSupabaseEnv(), []);
   const supabaseReady = supabaseEnv.enabled;
   const ladderRating = useMemo(() => buildLadderRating(snapshot), [snapshot]);
+  const activeTheme = useMemo(
+    () => THEME_OPTIONS.find((theme) => theme.id === settings.theme) ?? THEME_OPTIONS[0],
+    [settings.theme]
+  );
+  const activeViewMeta = VIEW_META[view];
   const welcomePromptOpen = useMemo(
     () =>
       shouldOpenWelcomeGate({
@@ -173,9 +276,10 @@ export default function App() {
         authBootstrapComplete,
         syncState,
         welcomePromptState,
+        sessionCount: sessions.length,
         forcedOpen: welcomeGateManuallyOpen
       }),
-    [authBootstrapComplete, supabaseReady, syncState, welcomeGateManuallyOpen, welcomePromptState]
+    [authBootstrapComplete, sessions.length, supabaseReady, syncState, welcomeGateManuallyOpen, welcomePromptState]
   );
   const featuredMedal = useMemo(
     () => medals.find((medal) => medal.code === profile.featuredMedalCode) ?? getFeaturedBadge(medals),
@@ -209,6 +313,31 @@ export default function App() {
     setWelcomePromptState(nextState);
     persistWelcomePromptState(nextState);
   }, []);
+
+  const navigateToView = useCallback(
+    (nextView: ViewTab) => {
+      if (nextView === view) {
+        return;
+      }
+
+      setPageDirection(VIEW_SEQUENCE.indexOf(nextView) > VIEW_SEQUENCE.indexOf(view) ? 1 : -1);
+      setView(nextView);
+    },
+    [view]
+  );
+
+  const handleThemeChange = useCallback(
+    (theme: AppThemeId) => {
+      if (theme === settings.theme) {
+        return;
+      }
+
+      const nextSettings = { ...settings, theme };
+      setSettings(nextSettings);
+      saveSettings(nextSettings);
+    },
+    [settings]
+  );
 
   const refreshRemoteLeaderboard = useCallback(async () => {
     if (!supabaseReady) {
@@ -248,6 +377,18 @@ export default function App() {
       delete document.documentElement.dataset.reduceMotion;
     };
   }, [settings.reduceMotion]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.documentElement.dataset.theme = settings.theme;
+
+    return () => {
+      delete document.documentElement.dataset.theme;
+    };
+  }, [settings.theme]);
 
   useEffect(() => {
     persistSyncState(syncState);
@@ -403,12 +544,12 @@ export default function App() {
 
   const handleOpenSyncAccess = useCallback(() => {
     if (syncState.userId || !supabaseReady) {
-      setView('settings');
+      navigateToView('settings');
       return;
     }
 
     setWelcomeGateManuallyOpen(true);
-  }, [supabaseReady, syncState.userId]);
+  }, [navigateToView, supabaseReady, syncState.userId]);
 
   const handleCloseWelcomeGate = useCallback(() => {
     if (welcomeGateManuallyOpen) {
@@ -445,8 +586,8 @@ export default function App() {
       return;
     }
 
-    setView((current) => getAdjacentView(current, deltaX < 0 ? 'next' : 'prev'));
-  }, [welcomePromptOpen]);
+    navigateToView(getAdjacentView(view, deltaX < 0 ? 'next' : 'prev'));
+  }, [navigateToView, view, welcomePromptOpen]);
 
   const handleWelcomeMagicLink = useCallback(async () => {
     if (!syncState.email) {
@@ -757,51 +898,189 @@ export default function App() {
     />
   );
 
+  const summaryChips = [
+    { label: 'Season', value: currentSeason.name },
+    { label: 'Sync', value: getSyncSummaryValue(syncState, supabaseReady) },
+    { label: 'Saved', value: `${sessions.length}` }
+  ];
+
+  const pageContent =
+    view === 'training' ? (
+      <>
+        <TrainingWorkspace
+          plan={plan}
+          settings={settings}
+          onSaved={handleTrainingSaved}
+          onToast={(message) => setToast(message)}
+        />
+        {trainingCompanion}
+      </>
+    ) : view === 'review' ? (
+      <ReviewPage
+        sessions={sessions}
+        baseline={baseline}
+        baselineComparison={baselineComparison}
+        snapshot={snapshot}
+        ladderRating={ladderRating}
+        featuredMedal={featuredMedal}
+        nextMedal={nextMedal}
+        currentPlan={plan}
+        settings={settings}
+        onDataChanged={refreshAppState}
+        onDeleteSession={handleDeleteSession}
+      />
+    ) : view === 'medals' ? (
+      <MedalsPage sessions={sessions} medals={medals} />
+    ) : view === 'ladder' ? (
+      <LadderPage
+        season={currentSeason}
+        rating={ladderRating}
+        leaderboard={leaderboard}
+        leaderboardSource={leaderboardSource}
+        leaderboardStatus={remoteLeaderboardStatus}
+        leaderboardError={remoteLeaderboardError}
+        profile={profile}
+        featuredMedal={featuredMedal}
+      />
+    ) : (
+      <SettingsPage
+        settings={settings}
+        customPlan={customPlan}
+        profile={profile}
+        syncState={syncState}
+        medals={medals}
+        dataPanel={settingsDataPanel}
+        supabaseReady={supabaseReady}
+        supabaseProjectHost={supabaseEnv.projectHost ?? undefined}
+        supabaseMissingKeys={supabaseEnv.missingKeys}
+        hasSupabaseSession={Boolean(syncState.userId)}
+        remoteLeaderboardStatus={remoteLeaderboardStatus}
+        remoteLeaderboardCount={remoteLeaderboard?.length ?? 0}
+        remoteLeaderboardError={remoteLeaderboardError}
+        onSettingsChange={handleSettingsChange}
+        onCustomPlanChange={handleCustomPlanChange}
+        onProfileChange={handleProfileChange}
+        onSyncStateChange={handleSyncStateChange}
+        onRequestMagicLink={handleRequestMagicLink}
+        onSyncNow={() => void syncArtifacts()}
+        onSignOutSupabase={handleDisconnectSupabase}
+      />
+    );
+
   return (
-    <div className="min-h-screen bg-transparent text-slate-100">
-      <div className="mx-auto max-w-[1600px] px-4 pb-28 pt-4 sm:px-6 xl:px-10 2xl:px-12">
-        <header className="rounded-[30px] border border-white/10 bg-white/[0.05] p-4 shadow-[0_30px_110px_rgba(0,0,0,0.34)] backdrop-blur-xl md:rounded-[36px] md:p-5">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.36em] text-sky-400 drop-shadow-md">寸止边缘训练器 / Edge Control Trainer</p>
-              <h1 className="mt-3 text-3xl font-bold tracking-wide text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.15)] sm:text-5xl xl:text-6xl">Edge Control Trainer</h1>
-              <p className="mt-2 text-base text-slate-300 xl:text-xl">寸止边缘训练器</p>
-              <div className="mt-4 flex flex-wrap items-center gap-3">
+    <div className="relative min-h-screen overflow-hidden bg-transparent text-slate-100">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <AnimatePresence initial={false} mode="sync">
+          <motion.div
+            key={`${settings.theme}-${view}`}
+            className="absolute inset-0"
+            initial={{ opacity: settings.reduceMotion ? 1 : 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: settings.reduceMotion ? 1 : 0 }}
+            transition={{ duration: settings.reduceMotion ? 0 : 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className={clsx('absolute -top-24 left-[6%] h-72 w-72 rounded-full blur-[110px]', activeViewMeta.pageGlowTopClass)} />
+            <div className={clsx('absolute bottom-16 right-[2%] h-80 w-80 rounded-full blur-[120px]', activeViewMeta.pageGlowBottomClass)} />
+            <div
+              className={clsx(
+                'absolute left-1/2 top-24 h-56 w-[82vw] -translate-x-1/2 rounded-full bg-gradient-to-r blur-[100px]',
+                activeViewMeta.pageAuraClass
+              )}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-[1600px] px-4 pb-28 pt-4 sm:px-6 xl:px-10 2xl:px-12">
+        <header
+          className={clsx(
+            'rounded-[28px] border p-4 shadow-[0_30px_110px_rgba(0,0,0,0.34)] backdrop-blur-xl md:rounded-[36px] md:p-5',
+            activeViewMeta.headerShellClass
+          )}
+        >
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-3xl">
+              <p className={clsx('text-[11px] uppercase tracking-[0.36em] drop-shadow-md', activeViewMeta.eyebrowClass)}>
+                寸止边缘训练器 / Edge Control Trainer
+              </p>
+              <h1 className="mt-2 text-3xl font-bold tracking-wide text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.14)] sm:text-5xl xl:text-6xl">
+                Edge Control Trainer
+              </h1>
+              <p className="mt-2 text-sm text-slate-300 sm:text-base xl:text-xl">左右切页、底部常驻操作区，以及更轻的手机入口都收在这里。</p>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  className="rounded-full border border-sky-300/20 bg-sky-400/10 px-4 py-2 text-sm font-medium text-sky-100 transition hover:border-sky-200/40 hover:bg-sky-400/20"
+                  className={clsx(
+                    'rounded-full border px-4 py-2.5 text-sm font-medium transition hover:border-white/30 hover:bg-white/[0.16]',
+                    activeViewMeta.railClass
+                  )}
                   onClick={handleOpenSyncAccess}
                 >
                   {syncState.userId ? 'Account' : 'Sign In'}
                 </button>
-                <p className="text-sm text-slate-400">
-                  {syncState.userId
-                    ? syncState.email ?? 'Supabase sync is active.'
-                    : supabaseReady
-                      ? 'Open the sign-in dialog any time to restore sync.'
-                      : 'Supabase is not configured yet, so this device is staying in local mode.'}
-                </p>
+                <div
+                  className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-white/10 bg-black/25 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  data-swipe-lock="true"
+                >
+                  <span className="px-2 text-[11px] uppercase tracking-[0.28em] text-slate-500">Theme</span>
+                  {THEME_OPTIONS.map((theme) => (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      className={clsx(
+                        'flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition',
+                        settings.theme === theme.id ? theme.activeClass : 'text-slate-300 hover:bg-white/[0.08]'
+                      )}
+                      onClick={() => handleThemeChange(theme.id)}
+                    >
+                      <span className={clsx('h-2.5 w-2.5 rounded-full', theme.dotClass)} />
+                      <span>{theme.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              <p className="mt-3 text-xs leading-6 text-slate-400 sm:text-sm">
+                {syncState.userId
+                  ? syncState.email ?? 'Supabase sync is active.'
+                  : supabaseReady
+                    ? 'Open the sign-in dialog any time to restore sync.'
+                    : 'Supabase is not configured yet, so this device is staying in local mode.'}
+                <span className="ml-2 text-slate-500">Theme {activeTheme.label}</span>
+              </p>
+
+              <details className="mt-3 rounded-[22px] border border-white/10 bg-black/20 p-3 md:hidden" data-swipe-lock="true">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm text-slate-200">
+                  <span className="font-medium">Status</span>
+                  <span className="text-xs text-slate-400">{currentSeason.name} · {sessions.length} saves</span>
+                </summary>
+                <div className="mt-3 grid gap-2">
+                  {summaryChips.map((item) => (
+                    <SummaryChip key={item.label} label={item.label} value={item.value} />
+                  ))}
+                </div>
+              </details>
             </div>
-            <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
-              <SummaryChip label="赛季" value={currentSeason.name} />
-              <SummaryChip label="同步" value={getSyncSummaryValue(syncState, supabaseReady)} />
-              <SummaryChip label="记录" value={`${sessions.length} 次`} />
+            <div className="hidden gap-2 md:grid md:grid-cols-3 md:gap-3">
+              {summaryChips.map((item) => (
+                <SummaryChip key={item.label} label={item.label} value={item.value} />
+              ))}
             </div>
           </div>
 
-          <nav className="mt-6 hidden flex-wrap gap-2 md:flex">
+          <nav className="mt-5 hidden flex-wrap gap-2 md:flex" data-swipe-lock="true">
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.key}
                 type="button"
-                className={
-                  'rounded-full px-4 py-2.5 text-base transition ' +
-                  (view === item.key
-                    ? 'bg-white text-slate-950'
-                    : 'border border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]')
-                }
-                onClick={() => setView(item.key)}
+                className={clsx(
+                  'rounded-full px-4 py-2.5 text-base transition',
+                  view === item.key
+                    ? VIEW_META[item.key].activeNavClass
+                    : 'border border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]'
+                )}
+                onClick={() => navigateToView(item.key)}
               >
                 <span className="font-semibold">{getEnglishTabLabel(item.key).label}</span>
                 <span className="ml-2 text-sm text-slate-500">{item.label}</span>
@@ -810,82 +1089,35 @@ export default function App() {
           </nav>
         </header>
 
-        <p className="mt-4 text-xs text-slate-500 md:hidden">左右滑动可在训练、复盘、勋章、天梯和设置之间切页。</p>
-
-        <main className="mt-5 space-y-5 md:mt-6 md:space-y-6" onTouchStart={handleMainTouchStart} onTouchEnd={handleMainTouchEnd}>
-          {view === 'training' ? (
-            <TrainingWorkspace
-              plan={plan}
-              settings={settings}
-              onSaved={handleTrainingSaved}
-              onToast={(message) => setToast(message)}
-            />
-          ) : null}
-          {view === 'training' ? trainingCompanion : null}
-
-          <Suspense
-            fallback={
-              <section className="rounded-[30px] border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-400 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-                页面加载中……
-              </section>
-            }
-          >
-            {view === 'review' ? (
-              <ReviewPage
-                sessions={sessions}
-                baseline={baseline}
-                baselineComparison={baselineComparison}
-                snapshot={snapshot}
-                ladderRating={ladderRating}
-                featuredMedal={featuredMedal}
-                nextMedal={nextMedal}
-                currentPlan={plan}
-                settings={settings}
-                onDataChanged={refreshAppState}
-                onDeleteSession={handleDeleteSession}
+        <main className="mt-5 md:mt-6" onTouchStart={handleMainTouchStart} onTouchEnd={handleMainTouchEnd}>
+          <AnimatePresence initial={false} mode="wait">
+            <motion.div
+              key={view}
+              className="relative"
+              initial={settings.reduceMotion ? { opacity: 1 } : { opacity: 0, x: pageDirection > 0 ? 28 : -28, y: 20 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              exit={settings.reduceMotion ? { opacity: 1 } : { opacity: 0, x: pageDirection > 0 ? -28 : 28, y: -10 }}
+              transition={{ duration: settings.reduceMotion ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div
+                className={clsx(
+                  'pointer-events-none absolute inset-x-2 top-0 h-44 rounded-[36px] bg-gradient-to-r blur-3xl',
+                  activeViewMeta.pageAuraClass
+                )}
               />
-            ) : null}
-
-            {view === 'medals' ? <MedalsPage sessions={sessions} medals={medals} /> : null}
-
-            {view === 'ladder' ? (
-              <LadderPage
-                season={currentSeason}
-                rating={ladderRating}
-                leaderboard={leaderboard}
-                leaderboardSource={leaderboardSource}
-                leaderboardStatus={remoteLeaderboardStatus}
-                leaderboardError={remoteLeaderboardError}
-                profile={profile}
-                featuredMedal={featuredMedal}
-              />
-            ) : null}
-
-            {view === 'settings' ? (
-              <SettingsPage
-                settings={settings}
-                customPlan={customPlan}
-                profile={profile}
-                syncState={syncState}
-                medals={medals}
-                dataPanel={settingsDataPanel}
-                supabaseReady={supabaseReady}
-                supabaseProjectHost={supabaseEnv.projectHost ?? undefined}
-                supabaseMissingKeys={supabaseEnv.missingKeys}
-                hasSupabaseSession={Boolean(syncState.userId)}
-                remoteLeaderboardStatus={remoteLeaderboardStatus}
-                remoteLeaderboardCount={remoteLeaderboard?.length ?? 0}
-                remoteLeaderboardError={remoteLeaderboardError}
-                onSettingsChange={handleSettingsChange}
-                onCustomPlanChange={handleCustomPlanChange}
-                onProfileChange={handleProfileChange}
-                onSyncStateChange={handleSyncStateChange}
-                onRequestMagicLink={handleRequestMagicLink}
-                onSyncNow={() => void syncArtifacts()}
-                onSignOutSupabase={handleDisconnectSupabase}
-              />
-            ) : null}
-          </Suspense>
+              <div className="relative">
+                <Suspense
+                  fallback={
+                    <section className="rounded-[30px] border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-400 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+                      页面加载中……
+                    </section>
+                  }
+                >
+                  {pageContent}
+                </Suspense>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 
@@ -897,13 +1129,11 @@ export default function App() {
           <button
             key={item.key}
             type="button"
-            className={
-              'flex min-w-[52px] flex-col items-center rounded-full px-2 py-2 text-[10px] transition ' +
-              (view === item.key
-                ? 'bg-white text-slate-950'
-                : 'text-slate-300')
-            }
-            onClick={() => setView(item.key)}
+            className={clsx(
+              'flex min-w-[52px] flex-col items-center rounded-full px-2 py-2 text-[10px] transition',
+              view === item.key ? VIEW_META[item.key].activeNavClass : 'text-slate-300'
+            )}
+            onClick={() => navigateToView(item.key)}
           >
             <span className="text-sm font-semibold">{getEnglishTabLabel(item.key).short}</span>
             <span>{getEnglishTabLabel(item.key).label}</span>

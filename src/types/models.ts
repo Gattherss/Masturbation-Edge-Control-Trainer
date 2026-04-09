@@ -4,6 +4,7 @@ export type MedalFamily = 'rhythm' | 'control' | 'endurance' | 'progression' | '
 export type MedalTier = 'black_iron' | 'forged_iron' | 'steel' | 'titanium_black';
 export type SyncProvider = 'local' | 'supabase';
 export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'error';
+export type AppThemeId = 'midnight' | 'ember' | 'tide';
 
 export interface Segment {
   seq: number;
@@ -102,6 +103,7 @@ export interface Settings {
   restBeep: boolean;
   defaultUsedPorn: boolean;
   reduceMotion: boolean;
+  theme: AppThemeId;
 }
 
 export interface MedalCatalogItem {

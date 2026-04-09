@@ -32,6 +32,7 @@ export function shouldOpenWelcomeGate(params: {
   authBootstrapComplete: boolean;
   syncState: Pick<SyncState, 'userId'>;
   welcomePromptState: WelcomePromptState | null;
+  sessionCount?: number;
   forcedOpen?: boolean;
 }, now = new Date()) {
   if (params.syncState.userId) {
@@ -40,6 +41,10 @@ export function shouldOpenWelcomeGate(params: {
 
   if (params.forcedOpen) {
     return true;
+  }
+
+  if ((params.sessionCount ?? 1) === 0) {
+    return params.supabaseReady && params.authBootstrapComplete;
   }
 
   return (

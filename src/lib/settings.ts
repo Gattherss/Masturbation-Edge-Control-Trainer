@@ -6,7 +6,8 @@ export const DEFAULT_SETTINGS: Settings = {
   collectArousalOnFinish: true,
   restBeep: false,
   defaultUsedPorn: true,
-  reduceMotion: false
+  reduceMotion: false,
+  theme: 'midnight'
 };
 
 export function loadSettings(): Settings {

@@ -96,4 +96,21 @@ describe('shouldOpenWelcomeGate', () => {
       })
     ).toBe(false);
   });
+
+  it('opens again on an empty device even after guest mode was remembered', () => {
+    const welcomePromptState: WelcomePromptState = {
+      mode: 'guest',
+      updatedAt: '2026-04-09T00:00:00.000Z'
+    };
+
+    expect(
+      shouldOpenWelcomeGate({
+        supabaseReady: true,
+        authBootstrapComplete: true,
+        syncState: {},
+        welcomePromptState,
+        sessionCount: 0
+      })
+    ).toBe(true);
+  });
 });

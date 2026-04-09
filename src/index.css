@@ -9,15 +9,45 @@
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --ring-soft: rgba(255, 255, 255, 0.1);
+  --theme-glow-1: rgba(56, 189, 248, 0.16);
+  --theme-glow-2: rgba(245, 158, 11, 0.12);
+  --theme-glow-3: rgba(148, 163, 184, 0.1);
+  --theme-grid: rgba(255, 255, 255, 0.035);
+}
+
+html[data-theme='ember'] {
+  --bg-0: #100707;
+  --bg-1: #21110d;
+  --text-main: #fff7ed;
+  --text-muted: #cbd5e1;
+  --theme-glow-1: rgba(251, 191, 36, 0.16);
+  --theme-glow-2: rgba(249, 115, 22, 0.16);
+  --theme-glow-3: rgba(244, 63, 94, 0.12);
+  --theme-grid: rgba(255, 237, 213, 0.04);
+}
+
+html[data-theme='tide'] {
+  --bg-0: #04100f;
+  --bg-1: #07211d;
+  --text-main: #ecfeff;
+  --text-muted: #a7f3d0;
+  --theme-glow-1: rgba(45, 212, 191, 0.16);
+  --theme-glow-2: rgba(59, 130, 246, 0.14);
+  --theme-glow-3: rgba(16, 185, 129, 0.12);
+  --theme-grid: rgba(204, 251, 241, 0.04);
 }
 
 html {
   min-height: 100%;
   font-size: clamp(16px, 0.2vw + 15px, 18px);
   background:
-    radial-gradient(circle at top, rgba(245, 158, 11, 0.12), transparent 34%),
-    radial-gradient(circle at 82% 18%, rgba(59, 130, 246, 0.12), transparent 28%),
+    linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), var(--theme-grid) calc(100% - 1px)),
+    linear-gradient(180deg, transparent 0, transparent calc(100% - 1px), var(--theme-grid) calc(100% - 1px)),
+    radial-gradient(circle at 12% 2%, var(--theme-glow-1), transparent 30%),
+    radial-gradient(circle at 85% 12%, var(--theme-glow-2), transparent 28%),
+    radial-gradient(circle at 50% 100%, var(--theme-glow-3), transparent 34%),
     linear-gradient(180deg, var(--bg-1), var(--bg-0));
+  background-size: auto, auto, auto, auto, auto, auto;
 }
 
 body {
@@ -25,10 +55,15 @@ body {
   min-height: 100vh;
   line-height: 1.55;
   background:
-    radial-gradient(circle at top, rgba(245, 158, 11, 0.12), transparent 34%),
-    radial-gradient(circle at 82% 18%, rgba(59, 130, 246, 0.12), transparent 28%),
+    linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), var(--theme-grid) calc(100% - 1px)),
+    linear-gradient(180deg, transparent 0, transparent calc(100% - 1px), var(--theme-grid) calc(100% - 1px)),
+    radial-gradient(circle at 12% 2%, var(--theme-glow-1), transparent 30%),
+    radial-gradient(circle at 85% 12%, var(--theme-glow-2), transparent 28%),
+    radial-gradient(circle at 50% 100%, var(--theme-glow-3), transparent 34%),
     linear-gradient(180deg, var(--bg-1), var(--bg-0));
   color: var(--text-main);
+  background-size: auto, auto, auto, auto, auto, auto;
+  background-attachment: fixed;
 }
 
 #root {
